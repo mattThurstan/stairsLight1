@@ -30,8 +30,7 @@
  * http://wiki.keyestudio.com/index.php/Ks0052_keyestudio_PIR_Motion_Sensor
  */
   
-  
-boolean DEBUG = false;
+
 const unsigned long _pirHoldInterval = 30000; //150000;  //15000=15 sec. 30000=30 sec. 150000=2.5 mins.
 unsigned long _ledRiseSpeed = 35;                 //speed at which the LEDs turn on (runs backwards)
 
@@ -45,16 +44,13 @@ const byte _ledDOut0Pin = 4;                  //FastLED strip
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_A";
-const String _progVers = "0.200";               //
-//const int _mainLoopDelay = 0;                   //just in case  - using FastLED.delay instead..
+const String _progVers = "0.210";               //removed DEBUG
 #define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
 
 /*----------------------------PIR----------------------------*/
 volatile boolean _onOff = false;              //global. this should init false, then get activated by input - on/off true/false
 byte _state = 0;                              //0-Off, 1-Fade On, 2-On, 3-Fade Off
 //direction for fade on/off determined by last pir triggered
-//might not need to debounce PIR input if using RISING on interrupt
-//CHECK - think PIR stays HIGH for a duration ( ??? is default, 3m dist and 25ms hold ??? )
 volatile unsigned long _pirHoldPrevMillis = 0;
 volatile byte _pirLastTriggered = 255;        //last PIR sensor triggered (0=top or 1=bottom)
 volatile boolean _timerRunning = false;       //is the hold timer in use?
@@ -66,11 +62,9 @@ typedef struct {
   byte last;
   byte total;                                     //byte ok as haven't got more than 256 LEDs in a segment
 } LED_SEGMENT;
-const byte _segmentTotal = 1;                     //
+const byte _segmentTotal = 1;                     //runs down stair banister from top to bottom
 const byte _ledNum = 108;                         //
 LED_SEGMENT ledSegment[_segmentTotal] = {
-  /*{ 0, 16, 17 },*/ 
-  /*{ 0, 9, 10 },*/
   { 0, 107, 108 },
 };
 CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multiple '_leds(0, 2).fadeToBlackBy(40);' as well as single '_leds[0].fadeToBlackBy(40);'
@@ -78,7 +72,7 @@ CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multi
 byte _ledGlobalBrightnessCur = 255;               //current global brightness
 
 CHSV _topColorHSV( 50, 80, 159 );                 //0, 0, 200
-CHSV _botColorHSV( 50, 80, 159 );                   //0, 0, 200
+CHSV _botColorHSV( 50, 80, 159 );                 //0, 0, 200
 
 /*----------------------------MAIN----------------------------*/
 void setup()
@@ -103,15 +97,13 @@ void setup()
   //setup LEDs
   delay(3000);                              //give the power, LED strip, etc. a couple of secs to stabilise
 
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);  //limit power draw to 0.9A at 5v
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);   //limit power draw to 0.9A at 5v
   FastLED.addLeds<WS2812B, _ledDOut0Pin, GRB>(_leds, ledSegment[0].first, _ledNum).setCorrection( TypicalSMD5050 );
-  FastLED.setBrightness(_ledGlobalBrightnessCur);      //set global brightness
+  FastLED.setBrightness(_ledGlobalBrightnessCur);   //set global brightness
   FastLED.setTemperature(UncorrectedTemperature);   //set first temperature
 
   FastLED.clear();
   FastLED.show();
-
-  if (DEBUG) { Serial.println("Setup done."); }
 }
 
 void loop() {
@@ -120,26 +112,21 @@ void loop() {
 
   FastLED.show();                           //send all the data to the strips
   FastLED.delay(UPDATES_PER_SECOND);        // (1000/UPDATES_PER_SECOND)
-  //
-  //delay(_mainLoopDelay);  //using FastLED.delay instead..
 }
 
 void pirInterrupt0() {
   _pirLastTriggered = 0;  //top
   pirInterruptPart2();
-  if (DEBUG) { Serial.println("PIR 0 interrupt triggered!"); }
 }
 
 void pirInterrupt1() {
   _pirLastTriggered = 1;  //bottom
   pirInterruptPart2();
-  if (DEBUG) { Serial.println("PIR 1 interrupt triggered!"); }
 }
 
 void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
-    _state = 1;                               //if off or fading down, fade back up again
-    if (DEBUG) { Serial.println("State set to 1"); }
+    _state = 1;                               //if off or fading down, then fade back up again
     _fadeOnDirection = _pirLastTriggered;
   }
   _pirHoldPrevMillis = millis();              //store the current time (reset the timer)
