@@ -1,5 +1,5 @@
 /*
-    'stairsLight1_test2' by Thurstan. Test for LEDs controlled by motion sensors.
+    'stairsLight1_test1' by Thurstan. Test for LEDs controlled by motion sensors.
     Copyright (C) 2018  MTS Standish (mattThurstan)
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
