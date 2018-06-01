@@ -29,10 +29,12 @@ void loopPir()
 }
 
 void fadeOn() {
+  _stateSave = _state;                        //interrupt catch
   _leds.fadeToBlackBy(4);       //just in case
   if (_fadeOnDirection == 0) {
     //fade on top to bottom
     for (byte i = ledSegment[0].first; i <= ledSegment[0].last; i++) {
+      if (_state != _stateSave) { return; }   //interrupt catch
       fadeShowLEDs(ledSegment[0].first, i);
       if (i == ledSegment[0].last) { 
         _state = 2;
@@ -42,6 +44,7 @@ void fadeOn() {
   } else if (_fadeOnDirection == 1) {
     //fade on bottom to top
     for (byte i = ledSegment[0].last; i >= ledSegment[0].first; i--) {
+      if (_state != _stateSave) { return; }   //interrupt catch
       fadeShowLEDs(i, ledSegment[0].last);
       if (i == ledSegment[0].first) { 
         _state = 2;
@@ -52,9 +55,11 @@ void fadeOn() {
 }
 
 void fadeOff() {
+  _stateSave = _state;                        //interrupt catch
   if (_pirLastTriggered == 0) {
     //fade off bottom to top 
     for (byte i = ledSegment[0].last; i >= ledSegment[0].first; i--) {
+      if (_state != _stateSave) { return; }   //interrupt catch
       _leds = CRGB::Black;                    //fade em all
       fadeShowLEDs(ledSegment[0].first, i);   //then switch back on the ones we want
       if (i == ledSegment[0].first) {
@@ -66,6 +71,7 @@ void fadeOff() {
   } else if (_pirLastTriggered == 1) {
     //fade off top to bottom
     for (byte i = ledSegment[0].first; i <= ledSegment[0].last; i++) {
+      if (_state != _stateSave) { return; }   //interrupt catch
       _leds = CRGB::Black;
       fadeShowLEDs(i, ledSegment[0].last);
       if (i == ledSegment[0].last) { 

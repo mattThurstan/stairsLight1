@@ -32,7 +32,7 @@
   
 
 const unsigned long _pirHoldInterval = 30000; //150000;  //15000=15 sec. 30000=30 sec. 150000=2.5 mins.
-unsigned long _ledRiseSpeed = 35;                 //speed at which the LEDs turn on (runs backwards)
+unsigned long _ledRiseSpeed = 25; //35;                 //speed at which the LEDs turn on (runs backwards)
 
 /*----------------------------arduino pins----------------------------*/
 //2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
@@ -44,12 +44,13 @@ const byte _ledDOut0Pin = 4;                  //FastLED strip
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_A";
-const String _progVers = "0.210";               //removed DEBUG
+const String _progVers = "0.220";               //fixed interrupts not registering inside fade 'for-loops'
 #define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
 
 /*----------------------------PIR----------------------------*/
 volatile boolean _onOff = false;              //global. this should init false, then get activated by input - on/off true/false
-byte _state = 0;                              //0-Off, 1-Fade On, 2-On, 3-Fade Off
+volatile byte _state = 0;                     //0-Off, 1-Fade On, 2-On, 3-Fade Off
+volatile byte _stateSave = 0;                 //temp save state for inside for-loops
 //direction for fade on/off determined by last pir triggered
 volatile unsigned long _pirHoldPrevMillis = 0;
 volatile byte _pirLastTriggered = 255;        //last PIR sensor triggered (0=top or 1=bottom)
@@ -97,7 +98,7 @@ void setup()
   //setup LEDs
   delay(3000);                              //give the power, LED strip, etc. a couple of secs to stabilise
 
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);   //limit power draw to 0.9A at 5v
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);   //limit power draw to 0.9A at 5v for wall power supply
   FastLED.addLeds<WS2812B, _ledDOut0Pin, GRB>(_leds, ledSegment[0].first, _ledNum).setCorrection( TypicalSMD5050 );
   FastLED.setBrightness(_ledGlobalBrightnessCur);   //set global brightness
   FastLED.setTemperature(UncorrectedTemperature);   //set first temperature
