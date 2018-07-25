@@ -44,8 +44,9 @@ const byte _ledDOut0Pin = 4;                  //FastLED strip
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_A";
-const String _progVers = "0.220";               //fixed interrupts not registering inside fade 'for-loops'
+const String _progVers = "0.230";               //ghue
 #define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
+#define DEBUG 1
 
 /*----------------------------PIR----------------------------*/
 volatile boolean _onOff = false;              //global. this should init false, then get activated by input - on/off true/false
@@ -71,9 +72,9 @@ LED_SEGMENT ledSegment[_segmentTotal] = {
 CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multiple '_leds(0, 2).fadeToBlackBy(40);' as well as single '_leds[0].fadeToBlackBy(40);'
 
 byte _ledGlobalBrightnessCur = 255;               //current global brightness
-
-CHSV _topColorHSV( 50, 80, 159 );                 //0, 0, 200
-CHSV _botColorHSV( 50, 80, 159 );                 //0, 0, 200
+uint8_t gHue = 0;                                 //incremental "base color"
+CHSV _topColorHSV( 50, 80, 190 );                 //0, 0, 200  -  50, 80, 159
+CHSV _botColorHSV( 50, 80, 190 );                 //0, 0, 200  -  50, 80, 159
 
 /*----------------------------MAIN----------------------------*/
 void setup()
@@ -96,7 +97,7 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(_pirPin[1]), pirInterrupt1, RISING);
 
   //setup LEDs
-  delay(3000);                              //give the power, LED strip, etc. a couple of secs to stabilise
+  delay(3000);                                //give the power, LED strip, etc. a couple of secs to stabilise
 
   FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);   //limit power draw to 0.9A at 5v for wall power supply
   FastLED.addLeds<WS2812B, _ledDOut0Pin, GRB>(_leds, ledSegment[0].first, _ledNum).setCorrection( TypicalSMD5050 );
@@ -111,8 +112,13 @@ void loop() {
 
   loopPir();
 
-  FastLED.show();                           //send all the data to the strips
-  FastLED.delay(UPDATES_PER_SECOND);        // (1000/UPDATES_PER_SECOND)
+  FastLED.show();                             //send all the data to the strips
+  FastLED.delay(UPDATES_PER_SECOND);          // (1000/UPDATES_PER_SECOND)
+  
+  EVERY_N_MILLISECONDS( 10 ) { 
+    gHue++;                                   //slowly cycle the "base color" through the rainbow
+    _topColorHSV.hue = gHue;
+    }    
 }
 
 void pirInterrupt0() {
