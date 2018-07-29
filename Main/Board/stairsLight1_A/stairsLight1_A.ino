@@ -44,9 +44,9 @@ const byte _ledDOut0Pin = 4;                  //FastLED strip
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_A";
-const String _progVers = "0.230";               //ghue
+const String _progVers = "0.231";               //ghue tweak
 #define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
-#define DEBUG 1
+#define DEBUG 0
 
 /*----------------------------PIR----------------------------*/
 volatile boolean _onOff = false;              //global. this should init false, then get activated by input - on/off true/false
@@ -73,8 +73,8 @@ CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multi
 
 byte _ledGlobalBrightnessCur = 255;               //current global brightness
 uint8_t gHue = 0;                                 //incremental "base color"
-CHSV _topColorHSV( 50, 80, 190 );                 //0, 0, 200  -  50, 80, 159
-CHSV _botColorHSV( 50, 80, 190 );                 //0, 0, 200  -  50, 80, 159
+CHSV _topColorHSV( 50, 150, 255 );                 //0, 0, 200  -  50, 80, 159
+CHSV _botColorHSV( 50, 150, 255 );                 //0, 0, 200  -  50, 80, 159
 
 /*----------------------------MAIN----------------------------*/
 void setup()
@@ -114,10 +114,12 @@ void loop() {
 
   FastLED.show();                             //send all the data to the strips
   FastLED.delay(UPDATES_PER_SECOND);          // (1000/UPDATES_PER_SECOND)
-  
-  EVERY_N_MILLISECONDS( 10 ) { 
+   
+  //EVERY_N_SECONDS( 1 ) { 
+  EVERY_N_MILLISECONDS( 200 ) {
     gHue++;                                   //slowly cycle the "base color" through the rainbow
     _topColorHSV.hue = gHue;
+    _botColorHSV.hue = gHue;
     }    
 }
 
