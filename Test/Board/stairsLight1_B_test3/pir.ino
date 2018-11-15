@@ -1,4 +1,14 @@
-/*----------------------------pir----------------------------*/
+/*----------------------------setup pir----------------------------*/
+void setupPIR()
+{
+  //setup PIR pins and attach interrupts
+  pinMode(_pirPin[0], INPUT_PULLUP);
+  pinMode(_pirPin[1], INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(_pirPin[0]), pirInterrupt0, RISING);
+  attachInterrupt(digitalPinToInterrupt(_pirPin[1]), pirInterrupt1, RISING);
+}
+
+/*----------------------------loop pir----------------------------*/
 void loopPir() 
 {
   if (_timerRunning) {
@@ -25,6 +35,7 @@ void loopPir()
   } else if (_state == 3) {
     //fade off
     fadeOff();
+    publishState();
   }
 }
 

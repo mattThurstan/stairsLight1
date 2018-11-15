@@ -39,12 +39,9 @@ unsigned long _ledRiseSpeed = 25; //35;                 //speed at which the LED
 const byte _pirPin[2] = { 2, 3 };             //2 PIR sensors on interrupt pins (triggered on HIGH)
 const byte _ledDOut0Pin = 4;                  //FastLED strip
 
-/*----------------------------libraries----------------------------*/
-#include <FastLED.h>                        //WS2812B LED strip control and effects
-
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_A";
-const String _progVers = "0.231";               //ghue tweak
+const String _progVers = "0.235";               //
 #define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
 #define DEBUG 0
 
@@ -52,17 +49,19 @@ const String _progVers = "0.231";               //ghue tweak
 volatile boolean _onOff = false;              //global. this should init false, then get activated by input - on/off true/false
 volatile byte _state = 0;                     //0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                 //temp save state for inside for-loops
-//direction for fade on/off determined by last pir triggered
+//direction for fade on/off is determined by last pir triggered
 volatile unsigned long _pirHoldPrevMillis = 0;
 volatile byte _pirLastTriggered = 255;        //last PIR sensor triggered (0=top or 1=bottom)
 volatile boolean _timerRunning = false;       //is the hold timer in use?
 volatile byte _fadeOnDirection = 255;         //direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
 
 /*----------------------------LED----------------------------*/
+#include <FastLED.h>                        //WS2812B LED strip control and effects
+#define MAX_POWER_DRAW 900                  //limit the maximum power draw (in milliamps mA)
 typedef struct {
   byte first;
   byte last;
-  byte total;                                     //byte ok as haven't got more than 256 LEDs in a segment
+  byte total;                                     //using a byte her is ok as we haven't got more than 256 LEDs in a segment
 } LED_SEGMENT;
 const byte _segmentTotal = 1;                     //runs down stair banister from top to bottom
 const byte _ledNum = 108;                         //
@@ -72,9 +71,11 @@ LED_SEGMENT ledSegment[_segmentTotal] = {
 CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multiple '_leds(0, 2).fadeToBlackBy(40);' as well as single '_leds[0].fadeToBlackBy(40);'
 
 byte _ledGlobalBrightnessCur = 255;               //current global brightness
-uint8_t gHue = 0;                                 //incremental "base color"
-CHSV _topColorHSV( 50, 150, 255 );                 //0, 0, 200  -  50, 80, 159
-CHSV _botColorHSV( 50, 150, 255 );                 //0, 0, 200  -  50, 80, 159
+#define GHUE_CYCLE_TIME 200                       //gHue loop update time (in milliseconds)
+uint8_t gHue = 0;                                 //incremental "base color" used by loop
+CHSV _topColorHSV( 50, 150, 255 );                //0, 0, 200  -  50, 80, 159
+CHSV _botColorHSV( 50, 150, 255 );                //0, 0, 200  -  50, 80, 159
+
 
 /*----------------------------MAIN----------------------------*/
 void setup()
@@ -99,7 +100,7 @@ void setup()
   //setup LEDs
   delay(3000);                                //give the power, LED strip, etc. a couple of secs to stabilise
 
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, 900);   //limit power draw to 0.9A at 5v for wall power supply
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_DRAW);   //limit power draw to 0.9A at 5v for wall power supply
   FastLED.addLeds<WS2812B, _ledDOut0Pin, GRB>(_leds, ledSegment[0].first, _ledNum).setCorrection( TypicalSMD5050 );
   FastLED.setBrightness(_ledGlobalBrightnessCur);   //set global brightness
   FastLED.setTemperature(UncorrectedTemperature);   //set first temperature
@@ -116,7 +117,7 @@ void loop() {
   FastLED.delay(UPDATES_PER_SECOND);          // (1000/UPDATES_PER_SECOND)
    
   //EVERY_N_SECONDS( 1 ) { 
-  EVERY_N_MILLISECONDS( 200 ) {
+  EVERY_N_MILLISECONDS( GHUE_CYCLE_TIME ) {
     gHue++;                                   //slowly cycle the "base color" through the rainbow
     _topColorHSV.hue = gHue;
     _botColorHSV.hue = gHue;
