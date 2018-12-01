@@ -20,49 +20,47 @@
 
 
 #include <FS.h>
-#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
+#include <ESP8266WiFi.h>                          //https://github.com/esp8266/Arduino
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
-#include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
-#include <PubSubClient.h>        //https://github.com/knolleary/pubsubclient
+#include <WiFiManager.h>                          //https://github.com/tzapu/WiFiManager
+#include <ArduinoJson.h>                          //https://github.com/bblanchon/ArduinoJson
+#include <PubSubClient.h>                         //https://github.com/knolleary/pubsubclient
 #include <MD5Builder.h>
 #include <FastLED.h>                              //WS2812B LED strip control and effects
 
 
-const unsigned long _pirHoldInterval = 30000; //150000;  //15000=15 sec. 30000=30 sec. 150000=2.5 mins.
-unsigned long _ledRiseSpeed = 25; //35;                 //speed at which the LEDs turn on (runs backwards)
-
-/*----------------------------arduino pins----------------------------*/
-//2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
-const byte _pirPin[2] = { 2, 3 };             //2 PIR sensors on interrupt pins (triggered on HIGH)
-const byte _ledDOut0Pin = 14;                  //FastLED strip
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_B";
-const String _progVers = "0.240";               //
-#define UPDATES_PER_SECOND 0           //120    //main loop FastLED show delay - 1000/120
+const String _progVers = "0.250";                 //
+#define UPDATES_PER_SECOND 0           //120      //main loop FastLED show delay - 1000/120
 #define DEBUG 1
 
+/*----------------------------arduino pins----------------------------*/
+//2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
+const byte _pirPin[2] = { 2, 3 };                 //2 PIR sensors on interrupt pins (triggered on HIGH)
+const byte _ledDOut0Pin = 14;                     //FastLED strip
+
 /*----------------------------PIR----------------------------*/
-//volatile boolean _onOff = false;    //use state 0          //global. this should init false, then get activated by input - on/off true/false
-volatile byte _state = 0;                     //0-Off, 1-Fade On, 2-On, 3-Fade Off
-volatile byte _stateSave = 0;                 //temp save state for inside for-loops
+const unsigned long _pirHoldInterval = 30000; //150000;  //15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+volatile byte _state = 0;                         //0-Off, 1-Fade On, 2-On, 3-Fade Off
+volatile byte _stateSave = 0;                     //temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
 volatile unsigned long _pirHoldPrevMillis = 0;
-volatile byte _pirLastTriggered = 255;        //last PIR sensor triggered (0=top or 1=bottom)
-volatile boolean _timerRunning = false;       //is the hold timer in use?
-volatile byte _fadeOnDirection = 255;         //direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
+volatile byte _pirLastTriggered = 255;            //last PIR sensor triggered (0=top or 1=bottom)
+volatile boolean _timerRunning = false;           //is the hold timer in use?
+volatile byte _fadeOnDirection = 255;             //direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
 
 /*----------------------------LED----------------------------*/
-#define MAX_POWER_DRAW 450  //900                //limit the maximum power draw (in milliamps mA)
+#define MAX_POWER_DRAW 450  //900                 //limit the maximum power draw (in milliamps mA)
 typedef struct {
   byte first;
   byte last;
   byte total;                                     //using a byte here is ok as we haven't got more than 256 LEDs in a segment
 } LED_SEGMENT;
 const byte _segmentTotal = 1;                     //runs down stair banister from top to bottom
-const byte _ledNum = 20; //108;                         //
+const byte _ledNum = 20; //108;                   //
 LED_SEGMENT ledSegment[_segmentTotal] = {
   //{ 0, 0, 1 },
   //{ 0, 107, 108 },
@@ -71,8 +69,9 @@ LED_SEGMENT ledSegment[_segmentTotal] = {
 CRGBArray<_ledNum> _leds;                         //CRGBArray means can do multiple '_leds(0, 2).fadeToBlackBy(40);' as well as single '_leds[0].fadeToBlackBy(40);'
 
 byte _ledGlobalBrightnessCur = 255;               //current global brightness
+unsigned long _ledRiseSpeed = 25; //35;           //speed at which the LEDs turn on (runs backwards)
 #define GHUE_CYCLE_TIME 200                       //gHue loop update time (in milliseconds)
-uint8_t gHue = 0;                                 //incremental "base color" used by loop
+uint8_t _gHue = 0;                                 //incremental "base color" used by loop
 CHSV _topColorHSV( 50, 150, 255 );                //0, 0, 200  -  50, 80, 159
 CHSV _botColorHSV( 50, 150, 255 );                //0, 0, 200  -  50, 80, 159
 
@@ -83,17 +82,14 @@ const long mqttConnectionInterval = 60000;
 
 //define your default values here, if there are different values in config.json, they are overwritten.
 char mqtt_server[40] = "192.168.0.89";
-char mqtt_port[6] = "1883";       //1884
+char mqtt_port[6] = "1883";                       //1884
 char workgroup[32] = "workgroup";
-// MQTT username and password
-char username[20] = "matt";
-char password[20] = "thurstan";
+// MQTT username and password - this is visible, will need to implement security
+char username[20] = "";
+char password[20] = "";
 
-//MD5 of chip ID
-char machineId[32] = "";
-
-//flag for saving data
-bool shouldSaveConfig = false;
+char machineId[32] = "";                          //MD5 of chip ID
+bool shouldSaveConfig = false;                    //flag for saving data
 
 // MQTT
 WiFiClient espClient;
@@ -103,10 +99,7 @@ const uint8_t MSG_BUFFER_SIZE = 50;
 //long lastMsg = 0;
 //char msg[MSG_BUFFER_SIZE];
 //int value = 0;
-
-// buffer used to send/receive data with MQTT
-//const uint8_t MSG_BUFFER_SIZE = 20;
-char m_msg_buffer[MSG_BUFFER_SIZE]; 
+char m_msg_buffer[MSG_BUFFER_SIZE];               //buffer used to send/receive data with MQTT
 
 //char cmnd_power_topic[44];
 //char cmnd_color_topic[44];
@@ -124,11 +117,21 @@ const PROGMEM char* MQTT_LIGHTS_BRIGHTNESS_TOPIC_COMMAND = "house/stairs/lights/
 //const PROGMEM char* MQTT_LIGHTS_HUE_TOPIC_STATE = "house/stairs/lights/hue/status";
 //const PROGMEM char* MQTT_LIGHTS_HUE_TOPIC_COMMAND = "house/stairs/lights/hue/set";
 
-const PROGMEM char* MQTT_LIGHTS_RGB_TOPIC_STATE = "house/stairs/lights/rgb/status";
-const PROGMEM char* MQTT_LIGHTS_RGB_TOPIC_COMMAND = "house/stairs/lights/rgb/set";
+const PROGMEM char* MQTT_LIGHTS_TOP_RGB_TOPIC_STATE = "house/stairs/lights/top/rgb/status";
+const PROGMEM char* MQTT_LIGHTS_TOP_RGB_TOPIC_COMMAND = "house/stairs/lights/top/rgb/set";
+
+const PROGMEM char* MQTT_LIGHTS_BOT_RGB_TOPIC_STATE = "house/stairs/lights/bot/rgb/status";
+const PROGMEM char* MQTT_LIGHTS_BOT_RGB_TOPIC_COMMAND = "house/stairs/lights/bot/rgb/set";
 
 const PROGMEM char* LIGHTS_ON = "ON";
 const PROGMEM char* LIGHTS_OFF = "OFF";
+
+const PROGMEM char* MQTT_SENSORS_TOP_TOPIC_STATE = "house/stairs/sensors/top/status";
+const PROGMEM char* MQTT_SENSORS_BOT_TOPIC_STATE = "house/stairs/sensors/bot/status";
+
+const PROGMEM char* MQTT_LIGHTS_MODE = "house/stairs/lights/mode";
+//char* _effect = "Normal";
+String _modeString = "Fade";  //Normal
 
 
 /*----------------------------MAIN----------------------------*/
@@ -147,11 +150,11 @@ void setup()
     Serial.println();
   }
   
-  setupLED();
+  loadConfigAndSettings();
     flashLED(1);
-  setupPIR();
+  setupLED();
     flashLED(2);
-  loadConfig();
+  setupPIR();
     flashLED(3);
   calculateMachineId();
     flashLED(4);
@@ -190,23 +193,27 @@ void loop()
 
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {
-  if (DEBUG) { Serial.print("pirInterrupt0"); }
+  if (DEBUG) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 0;  //top
+  //publishSensorTop();
+  mqttClient.publish(MQTT_SENSORS_BOT_TOPIC_STATE, LIGHTS_ON, true);
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
-  if (DEBUG) { Serial.print("pirInterrupt0"); }
+  if (DEBUG) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 1;  //bottom
+  //publishSensorBot();
+  mqttClient.publish(MQTT_SENSORS_TOP_TOPIC_STATE, LIGHTS_ON, true);
   pirInterruptPart2();
 }
 
 void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
-    _state = 1;                               //if off or fading down, then fade back up again
+    _state = 1;                                   //if off or fading down, then fade back up again
     _fadeOnDirection = _pirLastTriggered;
   }
-  _pirHoldPrevMillis = millis();              //store the current time (reset the timer)
-  _timerRunning = true;                       //enable the timer loop in pir
+  _pirHoldPrevMillis = millis();                  //store the current time (reset the timer)
+  _timerRunning = true;                           //enable the timer loop in pir
 }
 

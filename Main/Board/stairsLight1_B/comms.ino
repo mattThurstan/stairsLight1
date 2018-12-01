@@ -70,29 +70,3 @@ void setupWifi()
   }
 }
 
-void saveConfig()
-{
-  //save the custom parameters to FS
-  if (shouldSaveConfig)
-  {
-      if (DEBUG) { Serial.println("saving config"); }
-      DynamicJsonBuffer jsonBuffer;
-      JsonObject& json = jsonBuffer.createObject();
-      json["mqtt_server"] = mqtt_server;
-      json["mqtt_port"] = mqtt_port;
-      json["workgroup"] = workgroup;
-      json["username"] = username;
-      json["password"] = password;
-
-      File configFile = SPIFFS.open("/config.json", "w");
-      if (!configFile)
-      {
-          if (DEBUG) { Serial.println("failed to open config file for writing"); }
-      }
-
-      json.printTo(Serial);
-      json.printTo(configFile);
-      configFile.close();
-  }
-}
-

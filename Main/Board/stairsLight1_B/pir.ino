@@ -20,6 +20,9 @@ void loopPir()
         _state = 3;
       }
       _timerRunning = false;                      //disable itself
+      //publishState();
+      //publishSensorTop();
+      //publishSensorBot();
     }
   }
   
@@ -36,6 +39,10 @@ void loopPir()
     //fade off
     fadeOff();
     publishState();
+    //publishSensorTop();
+    //publishSensorBot();
+    mqttClient.publish(MQTT_SENSORS_TOP_TOPIC_STATE, LIGHTS_OFF, true);
+    mqttClient.publish(MQTT_SENSORS_BOT_TOPIC_STATE, LIGHTS_OFF, true);
   }
 }
 

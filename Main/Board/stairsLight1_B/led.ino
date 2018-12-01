@@ -42,24 +42,39 @@ void loopLED()
   FastLED.delay(UPDATES_PER_SECOND);          // (1000/UPDATES_PER_SECOND)
    
   //EVERY_N_SECONDS( 1 ) { 
-  EVERY_N_MILLISECONDS( GHUE_CYCLE_TIME ) 
-  {
-    gHue++;                                   //slowly cycle the "base color" through the rainbow
-    _topColorHSV.hue = gHue;
-    _botColorHSV.hue = gHue;
-  } 
+  if (_modeString == "Fade") {
+    EVERY_N_MILLISECONDS( GHUE_CYCLE_TIME ) 
+    {
+      _gHue++;                                   //slowly cycle the "base color" through the rainbow
+      _topColorHSV.h = _gHue;
+      _botColorHSV.h = _gHue;
+    } 
+  }
 }
 
 void setBrightnessCur(byte brightness) 
 {
   FastLED.setBrightness(brightness);
   _ledGlobalBrightnessCur = brightness;
+  if (DEBUG) { Serial.print("setBrightnessCur "); }
+  if (DEBUG) { Serial.println(brightness); }
 }
 
-void setColorRGB(CRGB rgb)
+void setColorTopRGB(CRGB rgb)
+{
+  CHSV tempHSV = rgb2hsv_approximate(rgb);
+  _topColorHSV = tempHSV;
+  _gHue = tempHSV.h;
+  if (DEBUG) { Serial.print("setColorTopRGB "); }
+  if (DEBUG) { Serial.println(rgb); }
+}
+
+void setColorBotRGB(CRGB rgb)
 {
   CHSV tempHSV = rgb2hsv_approximate(rgb);
   _botColorHSV = tempHSV;
-  _topColorHSV = tempHSV;
+  _gHue = tempHSV.h;
+  if (DEBUG) { Serial.print("setColorBotRGB "); }
+  if (DEBUG) { Serial.println(rgb); }
 }
 
