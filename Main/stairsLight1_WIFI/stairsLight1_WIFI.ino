@@ -1,6 +1,6 @@
 /*
-    'stairsLight1_B' by Thurstan. LEDs controlled by motion sensors.
-    Copyright (C) 2018  MTS Standish (Thurstan|mattKsp)
+    'stairsLight1_WIFI' by Thurstan. LEDs controlled by motion sensors.
+    Copyright (C) 2018 MTS Standish (mattThurstan)
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@
 #include <PubSubClient.h>                         //https://github.com/knolleary/pubsubclient
 #include <MD5Builder.h>
 #include <FastLED.h>                              //WS2812B LED strip control and effects
-
+#include <MT_LightControlDefines.h>
 
 
 /*----------------------------system----------------------------*/
-const String _progName = "stairsLight1_B";
-const String _progVers = "0.250";                 //
+const String _progName = "stairsLight1_WIFI";
+const String _progVers = "0.250";                 //split to Standalone/WIFI/Mesh
 #define UPDATES_PER_SECOND 0           //120      //main loop FastLED show delay - 1000/120
 #define DEBUG 1
 
@@ -81,12 +81,18 @@ unsigned long mqttConnectionPreviousMillis = millis();
 const long mqttConnectionInterval = 60000;
 
 //define your default values here, if there are different values in config.json, they are overwritten.
-char mqtt_server[40] = "192.168.0.89";
-char mqtt_port[6] = "1883";                       //1884
-char workgroup[32] = "workgroup";
+//char mqtt_server[40] = "192.168.0.89";
+//char mqtt_port[6] = "1883";                       //1884
+//char workgroup[32] = "workgroup";
 // MQTT username and password - this is visible, will need to implement security
-char username[20] = "";
-char password[20] = "";
+//char username[20] = "";
+//char password[20] = "";
+
+char mqtt_server[] = MQTT_BROKER_IP;
+char mqtt_port[] = MQTT_BROKER_PORT;
+char workgroup[] = WORKGROUP_NAME;
+char username[] = MQTT_BROKER_USERNAME;
+char password[] = MQTT_BROKER_PASSWORD;
 
 char machineId[32] = "";                          //MD5 of chip ID
 bool shouldSaveConfig = false;                    //flag for saving data

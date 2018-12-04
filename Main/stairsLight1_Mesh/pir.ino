@@ -1,4 +1,14 @@
-/*----------------------------pir----------------------------*/
+/*----------------------------setup pir----------------------------*/
+void setupPIR()
+{
+  //setup PIR pins and attach interrupts
+  pinMode(_pirPin[0], INPUT_PULLUP);
+  pinMode(_pirPin[1], INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(_pirPin[0]), pirInterrupt0, RISING);
+  attachInterrupt(digitalPinToInterrupt(_pirPin[1]), pirInterrupt1, RISING);
+}
+
+/*----------------------------loop pir----------------------------*/
 void loopPir() 
 {
   if (_timerRunning) {
@@ -10,6 +20,9 @@ void loopPir()
         _state = 3;
       }
       _timerRunning = false;                      //disable itself
+      //publishState();
+      //publishSensorTop();
+      //publishSensorBot();
     }
   }
   
@@ -25,6 +38,11 @@ void loopPir()
   } else if (_state == 3) {
     //fade off
     fadeOff();
+    publishState();
+    //publishSensorTop();
+    //publishSensorBot();
+    //mqttClient.publish(MQTT_SENSORS_TOP_TOPIC_STATE, LIGHTS_OFF, true);
+    //mqttClient.publish(MQTT_SENSORS_BOT_TOPIC_STATE, LIGHTS_OFF, true);
   }
 }
 
@@ -82,11 +100,5 @@ void fadeOff() {
       }
     }
   }
-}
-
-void fadeShowLEDs(byte low, byte high) {
-  _leds(low, high).fill_gradient(_topColorHSV, _botColorHSV);
-  FastLED.show();
-  FastLED.delay(_ledRiseSpeed);
 }
 
