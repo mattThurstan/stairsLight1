@@ -13,13 +13,13 @@ void loopPir()
 {
   if (_timerRunning) {
     //lights on hold timer
-    unsigned long pirHoldCurMillis = millis();    //get current time
+    unsigned long pirHoldCurMillis = millis();    // get current time
     if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
       //when the time has expired, do this..
       if (_state == 1 || _state == 2) {
         _state = 3;
       }
-      _timerRunning = false;                      //disable itself
+      _timerRunning = false;                      // disable itself
       //publishState();
       //publishSensorTop();
       //publishSensorBot();
@@ -47,12 +47,12 @@ void loopPir()
 }
 
 void fadeOn() {
-  _stateSave = _state;                        //interrupt catch
-  _leds.fadeToBlackBy(4);       //just in case
+  _stateSave = _state;                            // interrupt catch
+  _leds.fadeToBlackBy(4);                         // just in case
   if (_fadeOnDirection == 0) {
     //fade on top to bottom
     for (byte i = ledSegment[0].first; i <= ledSegment[0].last; i++) {
-      if (_state != _stateSave) { return; }   //interrupt catch
+      if (_state != _stateSave) { return; }       // interrupt catch
       
       fadeShowLEDs(ledSegment[0].first, i);
       if (i == ledSegment[0].last) { 
@@ -63,7 +63,7 @@ void fadeOn() {
   } else if (_fadeOnDirection == 1) {
     //fade on bottom to top
     for (byte i = ledSegment[0].last; i >= ledSegment[0].first; i--) {
-      if (_state != _stateSave) { return; }   //interrupt catch
+      if (_state != _stateSave) { return; }       // interrupt catch
       fadeShowLEDs(i, ledSegment[0].last);
       if (i == ledSegment[0].first) { 
         _state = 2;
@@ -74,15 +74,15 @@ void fadeOn() {
 }
 
 void fadeOff() {
-  _stateSave = _state;                        //interrupt catch
+  _stateSave = _state;                            // interrupt catch
   if (_pirLastTriggered == 0) {
     //fade off bottom to top 
     for (byte i = ledSegment[0].last; i >= ledSegment[0].first; i--) {
-      if (_state != _stateSave) { return; }   //interrupt catch
-      _leds = CRGB::Black;                    //fade em all
-      fadeShowLEDs(ledSegment[0].first, i);   //then switch back on the ones we want
+      if (_state != _stateSave) { return; }       // interrupt catch
+      _leds = CRGB::Black;                        // fade em all
+      fadeShowLEDs(ledSegment[0].first, i);       // then switch back on the ones we want
       if (i == ledSegment[0].first) {
-        _leds = CRGB::Black;                  //turn off the last pixel before changing state
+        _leds = CRGB::Black;                      // turn off the last pixel before changing state
         _state = 0;
         return;
       }
@@ -90,11 +90,11 @@ void fadeOff() {
   } else if (_pirLastTriggered == 1) {
     //fade off top to bottom
     for (byte i = ledSegment[0].first; i <= ledSegment[0].last; i++) {
-      if (_state != _stateSave) { return; }   //interrupt catch
+      if (_state != _stateSave) { return; }       // interrupt catch
       _leds = CRGB::Black;
       fadeShowLEDs(i, ledSegment[0].last);
       if (i == ledSegment[0].last) { 
-        _leds = CRGB::Black;                  //turn off the last pixel before changing state
+        _leds = CRGB::Black;                      // turn off the last pixel before changing state
         _state = 0;
         return;
       }

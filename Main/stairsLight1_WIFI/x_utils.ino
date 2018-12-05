@@ -2,8 +2,8 @@
 void saveConfigCallback ()
 {
   //callback notifying us of the need to save config
-    if (DEBUG) { Serial.println("Should save config"); }
-    shouldSaveConfig = true;
+  shouldSaveConfig = true;
+  if (DEBUG) { Serial.println("Should save config"); }
 }
 
 void calculateMachineId()

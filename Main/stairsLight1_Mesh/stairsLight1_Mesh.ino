@@ -20,7 +20,6 @@
 
 
 #include <FS.h>
-#include <PubSubClient.h>                         // https://github.com/knolleary/pubsubclient
 #include <FastLED.h>                              // WS2812B LED strip control and effects
 #include "painlessMesh.h"
 #include <MT_LightControlDefines.h>
@@ -28,7 +27,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.250";                 // split to Standalone/WIFI/Mesh
+const String _progVers = "0.260";                 // cleanup
 #define UPDATES_PER_SECOND 0           //120      // main loop FastLED show delay - 1000/120
 #define DEBUG 1
 bool shouldSaveConfig = false;                    // flag for saving data
@@ -73,9 +72,6 @@ CHSV _topColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
 CHSV _botColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
 
 /*----------------------------Mesh----------------------------*/
-char mesh_name[] = MESH_NAME;
-char mesh_password[] = MESH_PASSWORD;
-uint16_t mesh_port = MESH_PORT;
 painlessMesh  mesh;
 Scheduler userScheduler; // to control your personal task ??? prob never gonna use
 
@@ -165,12 +161,9 @@ void setup()
   //flashLED(6);
     
   if (DEBUG) {
-    Serial.println("");
-    Serial.println("-----");
-    Serial.print("Node ID: ");
-    Serial.println(mesh.getNodeId());
-    Serial.println("-----");
-    Serial.println("");
+    String s = String(mesh.getNodeId());
+    Serial.print("Device Node ID is ");
+    Serial.println(s);
   }
 }
 
@@ -187,7 +180,7 @@ void loop()
       shouldSaveSettings = false; 
     }
   }
-  //factoryReset();              //TODO             // Press and hold the button to reset to factory defaults
+  //factoryReset();              //TODO           // Press and hold the button to reset to factory defaults
 }
 
 
