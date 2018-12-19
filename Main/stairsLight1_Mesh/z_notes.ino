@@ -1,7 +1,7 @@
 /*----------------------------notes----------------------------*/
 
 /* 
- * WeMos D1 (R2 &) mini, 80 MHz, 115200 baud, 4M, (3M SPIFFS)
+ * WeMos D1 (R2 &) mini, 80 MHz, 115200 baud, 4M, (1M SPIFFS)
  * 
  * Pinout Wemos D1 Mini (ESP-8266)
  * RX  3

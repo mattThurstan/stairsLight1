@@ -38,9 +38,9 @@ void loopPir()
   } else if (_state == 3) {
     //fade off
     fadeOff();
-    publishState();
-    //publishSensorTop();
-    //publishSensorBot();
+    publishState(true);
+    publishSensorTop(true);
+    publishSensorBot(true);
     //mqttClient.publish(MQTT_SENSORS_TOP_TOPIC_STATE, LIGHTS_OFF, true);
     //mqttClient.publish(MQTT_SENSORS_BOT_TOPIC_STATE, LIGHTS_OFF, true);
   }

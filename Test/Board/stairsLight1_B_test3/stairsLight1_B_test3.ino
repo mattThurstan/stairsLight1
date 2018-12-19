@@ -82,12 +82,12 @@ unsigned long mqttConnectionPreviousMillis = millis();
 const long mqttConnectionInterval = 60000;
 
 //define your default values here, if there are different values in config.json, they are overwritten.
-char mqtt_server[40] = "192.168.0.89";
-char mqtt_port[6] = "1883";       //1884
+char mqtt_server[40] = "";
+char mqtt_port[6] = "";       //1884
 char workgroup[32] = "workgroup";
 // MQTT username and password
-char username[20] = "matt";
-char password[20] = "thurstan";
+char username[20] = "";
+char password[20] = "";
 
 //MD5 of chip ID
 char machineId[32] = "";

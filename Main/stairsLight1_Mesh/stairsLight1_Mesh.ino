@@ -27,11 +27,12 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.260";                 // cleanup
+const String _progVers = "0.270";                 // all working
 #define UPDATES_PER_SECOND 0           //120      // main loop FastLED show delay - 1000/120
 #define DEBUG 1
 bool shouldSaveConfig = false;                    // flag for saving data
 bool shouldSaveSettings = false;                  // flag for saving data
+bool runonce = true;                              // flag for sending states when first mesh conection
 
 /*----------------------------pins----------------------------*/
 //2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
@@ -72,16 +73,7 @@ CHSV _topColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
 CHSV _botColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
 
 /*----------------------------Mesh----------------------------*/
-painlessMesh  mesh;
-Scheduler userScheduler; // to control your personal task ??? prob never gonna use
-
-//eeded for painless library
-//Prototypes. Declare here so doesn't spaz out later.
-//void receivedCallback(uint32_t from, String & msg);
-//void newConnectionCallback(uint32_t nodeId);
-//void changedConnectionCallback(); 
-//void nodeTimeAdjustedCallback(int32_t offset); 
-//void delayReceivedCallback(uint32_t from, int32_t delay);
+painlessMesh  mesh;                               // initialise
 
 void receivedCallback(uint32_t from, String &msg ) {
   if (DEBUG) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
@@ -89,10 +81,27 @@ void receivedCallback(uint32_t from, String &msg ) {
 }
 
 void newConnectionCallback(uint32_t nodeId) {
+  if (runonce == true) {
+    publishState(false);
+    publishSensorTop(false);
+    publishSensorBot(false);
+    publishBrightness(false);
+    publishTopRGB(false);
+    publishBotRGB(false);
+    //publishMode(false);
+    runonce = false;
+  }
   if (DEBUG) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
 }
 
 void changedConnectionCallback() {
+  //publishState(false);
+  //publishSensorTop(false);
+  //publishSensorBot(false);
+  //publishBrightness(false);
+  //publishTopRGB(false);
+  //publishBotRGB(false);
+  //publishMode(false);
   if (DEBUG) { Serial.printf("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
 }
 
@@ -105,30 +114,6 @@ void delayReceivedCallback(uint32_t from, int32_t delay) {
 }
 
 /*----------------------------MQTT----------------------------*/
-
-//broadcast states and subscribe to commands
-//const PROGMEM char* MQTT_LIGHTS_TOPIC_STATE = "stairs/lights/light/status";
-//const PROGMEM char* MQTT_LIGHTS_TOPIC_COMMAND = "stairs/lights/light/switch";
-
-//const PROGMEM char* MQTT_LIGHTS_BRIGHTNESS_TOPIC_STATE = "stairs/lights/brightness/status";
-//const PROGMEM char* MQTT_LIGHTS_BRIGHTNESS_TOPIC_COMMAND = "stairs/lights/brightness/set";
-
-//const PROGMEM char* MQTT_LIGHTS_HUE_TOPIC_STATE = "stairs/lights/hue/status";
-//const PROGMEM char* MQTT_LIGHTS_HUE_TOPIC_COMMAND = "stairs/lights/hue/set";
-
-//const PROGMEM char* MQTT_LIGHTS_TOP_RGB_TOPIC_STATE = "stairs/lights/top/rgb/status";
-//const PROGMEM char* MQTT_LIGHTS_TOP_RGB_TOPIC_COMMAND = "stairs/lights/top/rgb/set";
-
-//const PROGMEM char* MQTT_LIGHTS_BOT_RGB_TOPIC_STATE = "stairs/lights/bot/rgb/status";
-//const PROGMEM char* MQTT_LIGHTS_BOT_RGB_TOPIC_COMMAND = "stairs/lights/bot/rgb/set";
-
-const PROGMEM char* LIGHTS_ON = "ON";
-const PROGMEM char* LIGHTS_OFF = "OFF";
-
-//const PROGMEM char* MQTT_SENSORS_TOP_TOPIC_STATE = "stairs/sensors/top/status";
-//const PROGMEM char* MQTT_SENSORS_BOT_TOPIC_STATE = "stairs/sensors/bot/status";
-
-//const PROGMEM char* MQTT_LIGHTS_MODE = "stairs/lights/mode";
 //char* _effect = "Normal";
 String _modeString = "Fade";  //Normal
 
@@ -173,7 +158,7 @@ void loop()
   loopPir();
   loopLED();   
   
-  EVERY_N_SECONDS(30) {
+  EVERY_N_SECONDS(30) {                           // too much ???
     if (shouldSaveSettings == true)
     { 
       saveSettings(); 
@@ -188,14 +173,12 @@ void loop()
 void pirInterrupt0() {
   if (DEBUG) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 0;  //top
-  publishSensorTop();
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
   if (DEBUG) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 1;  //bottom
-  publishSensorBot();
   pirInterruptPart2();
 }
 
@@ -203,6 +186,11 @@ void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
     _state = 1;                                   // if off or fading down, then fade back up again
     _fadeOnDirection = _pirLastTriggered;
+  }
+  if (_pirLastTriggered == 0) {
+    publishSensorTop(true);
+  } else if (_pirLastTriggered == 1) {
+    publishSensorBot(true);
   }
   _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
   _timerRunning = true;                           // enable the timer loop in pir

@@ -3,16 +3,15 @@ void receiveMessage(uint32_t from, String msg)
 {
   uint8_t firstMsgIndex = msg.indexOf(':');
   String targetSub = msg.substring(0, firstMsgIndex);
-  String msgSub = msg.substring(firstMsgIndex);
+  String msgSub = msg.substring(firstMsgIndex+1);
 
   if (targetSub == "lights/light/switch")
   {
     if (msgSub == LIGHTS_ON)  //"ON"
     {
-      if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
       if (_state == 0) {
         pirInterrupt0();  //trigger bot sensor
-        publishState();
+        publishState(true);
       }
     }
     else if (msgSub == LIGHTS_OFF)  //"OFF"
@@ -22,6 +21,7 @@ void receiveMessage(uint32_t from, String msg)
         //does a 'publish state' from 'loopPir' when finished fade out
       }
     }
+    if (DEBUG) { Serial.print(targetSub); Serial.print(" : "); Serial.println(msgSub); }
   } 
   else if (targetSub == "lights/brightness/set")
   {
@@ -32,7 +32,7 @@ void receiveMessage(uint32_t from, String msg)
       return;
     } else {
       setBrightnessCur(brightness);
-      publishBrightness();
+      publishBrightness(true);
     }
   }
   else if (targetSub == "lights/top/rgb/set")
@@ -66,7 +66,7 @@ void receiveMessage(uint32_t from, String msg)
     }
 
     setColorTopRGB(tempRGB);
-    publishTopRGB();
+    publishTopRGB(true);
   }
   else if (targetSub == "lights/bot/rgb/set")
   {
@@ -99,36 +99,96 @@ void receiveMessage(uint32_t from, String msg)
     }
 
     setColorBotRGB(tempRGB);
-    publishBotRGB();
+    publishBotRGB(true);
   }
   else if (targetSub == "lights/mode")
   {
     if (msgSub == "Normal" || msgSub == "Fade") {
       _modeString = msgSub;
-      if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
-      publishMode();
+      publishMode(true);
+    }
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
+  }
+  else if (targetSub == "sunrise") {
+    // trigger only (global synced)
+    if (msgSub == LIGHTS_ON) {
+      //start sunrise
+    }
+    else if (msgSub == LIGHTS_OFF) {
+      //stop sunrise and revert to previous setting
     }
   }
-  else if (targetSub == "sunrise")
+  else if (targetSub == "lights/sunrise") {
+    // trigger only
+    // note: the single mesh msg of 'sunrise' is used for synced global sunrise
+    if (msgSub == LIGHTS_ON) {
+      //start sunrise
+      //publishMode(true);
+    }
+    else if (msgSub == LIGHTS_OFF) {
+      //stop sunrise and revert to previous setting
+      //publishMode(true);
+    }
+    //else if (msgSub == "receive a time for sunrise to happen at") {
+    //set sunrise time
+    //}
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
+  }
+  else if (targetSub == "sunset") {
+    // trigger only (global synced)
+    if (msgSub == LIGHTS_ON) {
+      //start sunset
+    }
+    else if (msgSub == LIGHTS_OFF) {
+      //stop sunset and revert to previous setting
+    }
+  }
+  else if (targetSub == "lights/sunset") {
+    // trigger only
+    // note: the single mesh msg of 'sunset' is used for synced global sunset
+    if (msgSub == LIGHTS_ON) {
+      //start sunset
+      //publishMode(true);
+    }
+    else if (msgSub == LIGHTS_OFF) {
+      //stop sunset and revert to previous setting
+      //publishMode(true);
+    }
+    //else if (msgSub == "receive a time for sunset to happen at") {
+    //set sunset time
+    //}
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
+  }
+  /*
+   * Breath : (noun) Refers to a full cycle of breathing. It can also refer to the air that is inhaled or exhaled.
+   */
+  else if (targetSub == "lights/breath")
   {
     if (msgSub == LIGHTS_ON) {
       
-      if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
-      //publishMode();
+      //publishMode(true);
     }
-  }
-  else if (targetSub == "sunset")
-  {
-    if (msgSub == LIGHTS_ON) {
+    else if (msgSub == LIGHTS_OFF) {
       
-      if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
-      //publishMode();
+      //publishMode(true);
     }
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
+  }
+  else if (targetSub == "lights/breath/xyz")
+  {
+    // msg will contain xyz coords for position within the house
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
+  }
+  else if (targetSub == "lights/breath/xyz/mode")
+  {
+    // set positional mode
+    // independent, global
+    if (DEBUG) { Serial.print(targetSub); Serial.println(msgSub); }
   }
   
 }
 
-void publishState()
+void publishState(bool save)
 {
   if (DEBUG) { Serial.print("publishState "); }
   String msg = "lights/light/status";
@@ -142,10 +202,10 @@ void publishState()
   mesh.sendSingle(id, msg);
   //mesh.sendBroadcast(msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
-void publishBrightness()
+void publishBrightness(bool save)
 {
   if (DEBUG) { Serial.print("publishBrightness "); }
   String msg = "lights/brightness/status";
@@ -154,7 +214,7 @@ void publishBrightness()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
 //void publishHue()
@@ -164,7 +224,7 @@ void publishBrightness()
 //}
 
 //currently using hsv, need to convert
-void publishTopRGB()
+void publishTopRGB(bool save)
 {
   CRGB tempRGB = _topColorHSV;
   if (DEBUG) { Serial.print("publishTopRGB "); }
@@ -178,10 +238,10 @@ void publishTopRGB()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); } 
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
-void publishBotRGB()
+void publishBotRGB(bool save)
 {
   CRGB tempRGB = _botColorHSV;
   if (DEBUG) { Serial.print("publishBotRGB "); }
@@ -195,15 +255,15 @@ void publishBotRGB()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
-void publishSensorTop()
+void publishSensorTop(bool save)
 {
   if (DEBUG) { Serial.print("publishSensorTop "); }
   String msg = "sensors/top/status";
   msg += ":"; //..just so we are all sure what is going on here !?
-  if ( (_state == 0 || _state == 3) && _pirLastTriggered == 0) {
+  if (_state == 0 || _state == 3) { // && _pirLastTriggered == 0) {
     msg += LIGHTS_OFF;
   } else {
     msg += LIGHTS_ON;
@@ -211,15 +271,15 @@ void publishSensorTop()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
-void publishSensorBot()
+void publishSensorBot(bool save)
 {
   if (DEBUG) { Serial.print("publishSensorBot "); }
   String msg = "sensors/bot/status";
   msg += ":"; //..just so we are all sure what is going on here !?
-  if ( (_state == 0 || _state == 3) && _pirLastTriggered == 1) {
+  if (_state == 0 || _state == 3) { // && _pirLastTriggered == 1) {
     msg += LIGHTS_OFF;
   } else {
     msg += LIGHTS_ON;
@@ -227,10 +287,10 @@ void publishSensorBot()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
-void publishMode()
+void publishMode(bool save)
 {
   if (DEBUG) { Serial.print("publishMode "); }
   String msg = "lights/mode";
@@ -239,6 +299,6 @@ void publishMode()
   uint32_t id = DEVICE_ID_BRIDGE1;
   mesh.sendSingle(id, msg);
   if (DEBUG) { Serial.println(msg); }
-  shouldSaveSettings = true;
+  if (save == true) { shouldSaveSettings = true; }
 }
 
