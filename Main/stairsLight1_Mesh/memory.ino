@@ -2,7 +2,7 @@
 void loadConfig()
 {
     //read configuration from FS json
-    if (DEBUG) { Serial.println("mounting FS..."); }
+    if (DEBUG_GEN) { Serial.println("mounting FS..."); }
 /*
     if (SPIFFS.begin())
     {
@@ -50,19 +50,19 @@ void loadConfig()
 void loadSettings()
 {
     //read configuration from FS json
-    if (DEBUG) { Serial.println("mounting FS..."); }
+    if (DEBUG_GEN) { Serial.println("mounting FS..."); }
 
     if (SPIFFS.begin())
     {
-        if (DEBUG) { Serial.println("mounted file system"); }
+        if (DEBUG_GEN) { Serial.println("mounted file system"); }
 
         if (SPIFFS.exists("/settings.json")) {
             //file exists, reading and loading
-            if (DEBUG) { Serial.println("reading user settings file"); }
+            if (DEBUG_GEN) { Serial.println("reading user settings file"); }
             File configFile = SPIFFS.open("/settings.json", "r");
             if (configFile)
             {
-                if (DEBUG) { Serial.println("opened user settings file"); }
+                if (DEBUG_GEN) { Serial.println("opened user settings file"); }
                 const size_t size = configFile.size();
                 // Allocate a buffer to store contents of the file.
                 std::unique_ptr<char[]> buf(new char[size]);
@@ -73,7 +73,7 @@ void loadSettings()
                 json.printTo(Serial);
                 if (json.success())
                 {
-                    if (DEBUG) { Serial.println("\nparsed json"); }
+                    if (DEBUG_GEN) { Serial.println("\nparsed json"); }
 
                     _ledGlobalBrightnessCur = json["gBrightnessCur"];
                     _ledRiseSpeed = json["riseSpeed"];
@@ -90,14 +90,14 @@ void loadSettings()
                 }
                 else
                 {
-                    if (DEBUG) { Serial.println("failed to load json user settings"); }
+                    if (DEBUG_GEN) { Serial.println("failed to load json user settings"); }
                 }
             }
         }
     }
     else
     {
-        if (DEBUG) { Serial.println("failed to mount FS"); }
+        if (DEBUG_GEN) { Serial.println("failed to mount FS"); }
     }
    
 }
@@ -107,7 +107,7 @@ void saveConfig()
   //save the custom parameters to FS
   if (shouldSaveConfig)
   {
-      if (DEBUG) { Serial.println("saving config"); }
+      if (DEBUG_GEN) { Serial.println("saving config"); }
       DynamicJsonBuffer jsonBuffer;
       JsonObject& json = jsonBuffer.createObject();
       //json["mqtt_server"] = mqtt_server;
@@ -127,7 +127,7 @@ void saveConfig()
 
 void saveSettings()
 {
-  if (DEBUG) { Serial.println("saving user settings"); }
+  if (DEBUG_GEN) { Serial.println("saving user settings"); }
   DynamicJsonBuffer jsonBuffer;
   JsonObject& json = jsonBuffer.createObject();
   //json["mqtt_server"] = mqtt_server;

@@ -1,6 +1,6 @@
 /*
     'stairsLight1_Mesh' by Thurstan. LEDs controlled by motion sensors.
-    Copyright (C) 2018 MTS Standish (mattThurstan)
+    Copyright (C) 2019 MTS Standish (mattThurstan)
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 */
 
 
-#include <FS.h>
+#include <FS.h>                                   // file system
 #include <FastLED.h>                              // WS2812B LED strip control and effects
 #include "painlessMesh.h"
 #include <MT_LightControlDefines.h>
@@ -27,9 +27,16 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.270";                 // all working
+const String _progVers = "0.271";                 // cleanup, mostly messages, input and debug
 #define UPDATES_PER_SECOND 0           //120      // main loop FastLED show delay - 1000/120
-#define DEBUG 1
+
+boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
+boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
+boolean DEBUG_MESHSYNC = false;                   // show painless mesh sync by flashing some leds (no = count of active mesh nodes) 
+boolean DEBUG_COMMS = false;                      // realtime serial debugging output - comms
+boolean DEBUG_INTERRUPT = false;                  // realtime serial debugging output - interrupt pins
+boolean DEBUG_USERINPUT = false;                  // realtime serial debugging output - user input
+
 bool shouldSaveConfig = false;                    // flag for saving data
 bool shouldSaveSettings = false;                  // flag for saving data
 bool runonce = true;                              // flag for sending states when first mesh conection
@@ -74,9 +81,10 @@ CHSV _botColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
 
 /*----------------------------Mesh----------------------------*/
 painlessMesh  mesh;                               // initialise
+uint32_t id = DEVICE_ID_BRIDGE1;
 
 void receivedCallback(uint32_t from, String &msg ) {
-  if (DEBUG) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
+  if (DEBUG_COMMS) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
   receiveMessage(from, msg);
 }
 
@@ -91,7 +99,7 @@ void newConnectionCallback(uint32_t nodeId) {
     //publishMode(false);
     runonce = false;
   }
-  if (DEBUG) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
+  if (DEBUG_COMMS) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
 }
 
 void changedConnectionCallback() {
@@ -106,11 +114,11 @@ void changedConnectionCallback() {
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-  if (DEBUG) { Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
+  if (DEBUG_COMMS) { Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
 }
 
 void delayReceivedCallback(uint32_t from, int32_t delay) {
-  if (DEBUG) { Serial.printf("Delay to node %u is %d us\n", from, delay); }
+  if (DEBUG_COMMS) { Serial.printf("Delay to node %u is %d us\n", from, delay); }
 }
 
 /*----------------------------MQTT----------------------------*/
@@ -121,17 +129,17 @@ String _modeString = "Fade";  //Normal
 /*----------------------------MAIN----------------------------*/
 void setup()
 {
-  Serial.begin(115200);
-  
-  if (DEBUG) {
+    Serial.begin(115200);
+    
+  //if (DEBUG_GEN) {
     Serial.println();
     Serial.print(_progName);
-    Serial.print(" ");
+    Serial.print(" v");
     Serial.print(_progVers);
     Serial.println();
     Serial.print("..");
     Serial.println();
-  }
+  //}
   
   //loadConfig();
   loadSettings();
@@ -145,11 +153,11 @@ void setup()
   //saveConfig();
   //flashLED(6);
     
-  if (DEBUG) {
+  //if (DEBUG_GEN) {
     String s = String(mesh.getNodeId());
     Serial.print("Device Node ID is ");
     Serial.println(s);
-  }
+  //}
 }
 
 void loop() 
@@ -171,13 +179,13 @@ void loop()
 
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {
-  if (DEBUG) { Serial.println("pirInterrupt0"); }
+  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 0;  //top
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
-  if (DEBUG) { Serial.println("pirInterrupt0"); }
+  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 1;  //bottom
   pirInterruptPart2();
 }
