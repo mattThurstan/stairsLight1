@@ -27,13 +27,13 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.271";                 // cleanup, mostly messages, input and debug
+const String _progVers = "0.272";                 // tweaking
 #define UPDATES_PER_SECOND 0           //120      // main loop FastLED show delay - 1000/120
 
-boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
+boolean DEBUG_GEN = true;                         // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
 boolean DEBUG_MESHSYNC = false;                   // show painless mesh sync by flashing some leds (no = count of active mesh nodes) 
-boolean DEBUG_COMMS = false;                      // realtime serial debugging output - comms
+boolean DEBUG_COMMS = true;                       // realtime serial debugging output - comms
 boolean DEBUG_INTERRUPT = false;                  // realtime serial debugging output - interrupt pins
 boolean DEBUG_USERINPUT = false;                  // realtime serial debugging output - user input
 
@@ -129,17 +129,15 @@ String _modeString = "Fade";  //Normal
 /*----------------------------MAIN----------------------------*/
 void setup()
 {
-    Serial.begin(115200);
-    
-  //if (DEBUG_GEN) {
-    Serial.println();
-    Serial.print(_progName);
-    Serial.print(" v");
-    Serial.print(_progVers);
-    Serial.println();
-    Serial.print("..");
-    Serial.println();
-  //}
+  Serial.begin(115200);
+  
+  Serial.println();
+  Serial.print(_progName);
+  Serial.print(" v");
+  Serial.print(_progVers);
+  Serial.println();
+  Serial.print("..");
+  Serial.println();
   
   //loadConfig();
   loadSettings();
@@ -153,11 +151,10 @@ void setup()
   //saveConfig();
   //flashLED(6);
     
-  //if (DEBUG_GEN) {
-    String s = String(mesh.getNodeId());
-    Serial.print("Device Node ID is ");
-    Serial.println(s);
-  //}
+  String s = String(mesh.getNodeId());
+  Serial.print("Device Node ID is ");
+  Serial.println(s);
+  
 }
 
 void loop() 
