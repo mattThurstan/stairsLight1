@@ -4,7 +4,7 @@
  * WeMos D1 (R2 &) mini, 80 MHz, 115200 baud, 4M, (1M SPIFFS)
  * 
  * Pinout Wemos D1 Mini (ESP-8266)
- * RX  3
+ * RX  3 (GPIO3)
  * TX  1
  * A0  Analog input, max 3.2V input  A0
  * D0  16  IO  GPIO16   - no PWM or I2C or interrupt
@@ -16,6 +16,8 @@
  * D6  12  IO, MISO  GPIO12
  * D7  13  IO, MOSI  GPIO13
  * D8  15  IO, 10k Pull-down, SS GPIO15
+ * 
+ * All have external interrupts except GPIO16 (D0)
  *
  * 
  * http://wiki.keyestudio.com/index.php/Ks0052_keyestudio_PIR_Motion_Sensor

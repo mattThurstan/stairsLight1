@@ -20,34 +20,44 @@
 
 
 #include <FS.h>                                   // file system
-#include <FastLED.h>                              // WS2812B LED strip control and effects
+#include <FastLED.h>                              // still using some bits
+#include <NeoPixelBrightnessBus.h>                // NeoPixelBrightnessBus (just for ESP8266)- for brightness functions (instead of NeoPixelBus.h)
 #include "painlessMesh.h"
 #include <MT_LightControlDefines.h>
 
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.272";                 // tweaking
-#define UPDATES_PER_SECOND 0           //120      // main loop FastLED show delay - 1000/120
+const String _progVers = "0.3";                   // replaced FastLED with NeoPixelBus (just for ESP8266)
 
-boolean DEBUG_GEN = true;                         // realtime serial debugging output - general
+boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
 boolean DEBUG_MESHSYNC = false;                   // show painless mesh sync by flashing some leds (no = count of active mesh nodes) 
-boolean DEBUG_COMMS = true;                       // realtime serial debugging output - comms
+boolean DEBUG_COMMS = false;                      // realtime serial debugging output - comms
 boolean DEBUG_INTERRUPT = false;                  // realtime serial debugging output - interrupt pins
 boolean DEBUG_USERINPUT = false;                  // realtime serial debugging output - user input
 
-bool shouldSaveConfig = false;                    // flag for saving data
-bool shouldSaveSettings = false;                  // flag for saving data
-bool runonce = true;                              // flag for sending states when first mesh conection
+boolean _firstTimeSetupDone = false;              // starts false //this is mainly to catch an interrupt trigger that happens during setup, but is usefull for other things
+//volatile boolean _onOff = true; //flip _state // issues with mqtt and init false // this should init false, then get activated by input - on/off true/false
+bool _shouldSaveSettings = false;                 // flag for saving data
+bool _runonce = true;                             // flag for sending states when first mesh conection
+//const int _mainLoopDelay = 0;                     // just in case  - using FastLED.delay instead..
+bool _isBreathing = false;                        // toggle for breath
+bool _isBreathOverlaid = false;                   // toggle for whether breath is overlaid on top of modes
+bool _isBreathingSynced = false;                  // breath sync local or global
 
 /*----------------------------pins----------------------------*/
+// NeoPixelBus - For Esp8266, the Pin is omitted and it uses GPIO3 (RX) due to DMA hardware use. 
 //2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
-const byte _pirPin[2] = { 2, 3 };                 // 2 PIR sensors on interrupt pins (triggered on HIGH)
-const byte _ledDOut0Pin = 14;                     // FastLED strip
+const byte _pirPin[2] = { 5, 4 }; // D1, D2       // 2 PIR sensors on interrupt pins (triggered on HIGH)
+
+/*----------------------------modes----------------------------*/
+const int _modeNum = 2;                           // normal, cycle (gHue)
+volatile int _modeCur = 1;                        // current mode in use
+String _modeName[_modeNum] = { "Normal", "Cycle" };
 
 /*----------------------------PIR----------------------------*/
-const unsigned long _pirHoldInterval = 30000; //150000;  // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+const unsigned long _pirHoldInterval = 30000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
 volatile byte _state = 0;                         // 0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                     // temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
@@ -57,27 +67,45 @@ volatile boolean _timerRunning = false;           // is the hold timer in use?
 volatile byte _fadeOnDirection = 255;             // direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
 
 /*----------------------------LED----------------------------*/
-#define MAX_POWER_DRAW 450  //900                 // limit the maximum power draw (in milliamps mA)
+const uint16_t _ledNum = 109;                     // NeoPixelBus - 108 + 1 LEDs
+NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> strip(_ledNum);
+
 typedef struct {
   byte first;
   byte last;
   byte total;                                     // using a byte here is ok as we haven't got more than 256 LEDs in a segment
 } LED_SEGMENT;
-const byte _segmentTotal = 1;                     // runs down stair banister from top to bottom
-const byte _ledNum = 20; //108;                   //
+const byte _segmentTotal = 2;                     // (1 + 1) runs down stair banister from top to bottom
 LED_SEGMENT ledSegment[_segmentTotal] = {
-  //{ 0, 0, 1 },
-  //{ 1, 107, 108 },
-  { 0, 19, 20 },
+  { 0, 0, 1 },
+  { 1, 108, 108 }
 };
-CRGBArray<_ledNum> _leds;                         // CRGBArray means can do multiple '_leds(0, 2).fadeToBlackBy(40);' as well as single '_leds[0].fadeToBlackBy(40);'
 
-byte _ledGlobalBrightnessCur = 255;               // current global brightness
+uint8_t _ledGlobalBrightnessCur = 255;            // current global brightness - adjust this
+uint8_t _ledBrightnessIncDecAmount = 10;          // the brightness amount to increase or decrease
 unsigned long _ledRiseSpeed = 25; //35;           // speed at which the LEDs turn on (runs backwards)
-#define GHUE_CYCLE_TIME 200                       // gHue loop update time (in milliseconds)
-uint8_t _gHue = 0;                                // incremental "base color" used by loop
-CHSV _topColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
-CHSV _botColorHSV( 50, 150, 255 );                // 0, 0, 200  -  50, 80, 159
+uint8_t _ledRiseSpeedSaved = 25;                  // cos of saving / casting unsigned long issues - use 0-255 via mqtt
+uint8_t _gHue2 = 0;                               // incremental cycling "base color", 0-100, converted to 0-1
+uint8_t _gHue2saved = 0;                          // used to revert color when going back to 'Normal' mode
+unsigned long _gHue2CycleMillis = 200UL;          // gHue loop update time (millis)
+uint8_t _gHue2CycleSaved = 50;                    // 0-255 mapped to millis range
+uint8_t _gHue2CycleMultiplier = 4;                // (__gHue2CycleSaved * _gHue2CycleMultiplier) = (unsigned long) _gHue2CycleMillis
+unsigned long _gHue2PrevMillis;                   // gHue loop previous time (millis)
+
+RgbColor _rgbRed(255, 0, 0);
+RgbColor _rgbGreen(0, 255, 0);
+RgbColor _rgbBlue(0, 0, 255);
+RgbColor _rgbYellow(255, 255, 0);
+RgbColor _rgbFuchsia(255, 0, 128);
+RgbColor _rgbOrange(255, 165, 0);
+RgbColor _rgbViolet(148, 0, 211);
+RgbColor _rgbTeal(0, 128, 128);
+RgbColor _rgbPink(255, 105, 180);
+RgbColor _rgbWhite(255, 255, 255);
+RgbColor _rgbBlack(0, 0, 0);
+
+//HslColor color(_gHue / 255.0f, saturationValue, lightnessValue); // 0.0 to 1.0
+HslColor _colorHSL(0.25f, 0.5f, 0.5f);
 
 /*----------------------------Mesh----------------------------*/
 painlessMesh  mesh;                               // initialise
@@ -89,28 +117,27 @@ void receivedCallback(uint32_t from, String &msg ) {
 }
 
 void newConnectionCallback(uint32_t nodeId) {
-  if (runonce == true) {
+  if (_runonce == true) {
     publishState(false);
     publishSensorTop(false);
     publishSensorBot(false);
     publishBrightness(false);
-    publishTopRGB(false);
-    publishBotRGB(false);
-    //publishMode(false);
-    runonce = false;
+    publishRGB(false);
+    publishMode(false);
+    publishRiseSpeed(false);
+    publishGHue2Cycle(false);
+    publishDebugGeneralState(false);
+    publishDebugOverlayState(false);
+    publishDebugMeshsyncState(false);
+    publishDebugCommsState(false);
+    _runonce = false;
   }
   if (DEBUG_COMMS) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
 }
 
 void changedConnectionCallback() {
-  //publishState(false);
-  //publishSensorTop(false);
-  //publishSensorBot(false);
-  //publishBrightness(false);
-  //publishTopRGB(false);
-  //publishBotRGB(false);
-  //publishMode(false);
-  if (DEBUG) { Serial.printf("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
+  //publish..
+  if (DEBUG_COMMS) { Serial.printf("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
@@ -121,14 +148,13 @@ void delayReceivedCallback(uint32_t from, int32_t delay) {
   if (DEBUG_COMMS) { Serial.printf("Delay to node %u is %d us\n", from, delay); }
 }
 
-/*----------------------------MQTT----------------------------*/
-//char* _effect = "Normal";
-String _modeString = "Fade";  //Normal
-
 
 /*----------------------------MAIN----------------------------*/
-void setup()
-{
+void setup() {
+  
+  // LED strip - Wemos D1 - GPIO 3 (RX) - swap the pin from serial to a GPIO.
+  pinMode(3, FUNCTION_3); // FUNCTION_0 = swap back
+  
   Serial.begin(115200);
   
   Serial.println();
@@ -139,38 +165,56 @@ void setup()
   Serial.print("..");
   Serial.println();
   
-  //loadConfig();
-  loadSettings();
-    flashLED(1);
-  setupLED();
-    flashLED(2);
-  setupPIR();
-    flashLED(3);
-  setupMesh();
-    flashLED(5);
-  //saveConfig();
-  //flashLED(6);
-    
-  String s = String(mesh.getNodeId());
-  Serial.print("Device Node ID is ");
-  Serial.println(s);
+  delay(3000);                                    // give the power, LED strip, etc. a couple of secs to stabilise
   
+  loadSettings();
+  setupPIR();
+  setupLEDs();
+  setupMesh();
+
+  //everything done? ok then..
+  Serial.print(F("Setup done"));
+  Serial.println("-----");
+  Serial.print(F("Device Node ID is "));
+  String s = String(mesh.getNodeId());
+  Serial.println(s);
+  Serial.println("-----");
+  Serial.println("");
+
+  delay(1500);
 }
 
-void loop() 
-{
-  mesh.update();
-  loopPir();
-  loopLED();   
+void loop()  {
   
+  if(_firstTimeSetupDone == false) {
+    if (DEBUG_GEN) { }
+    _firstTimeSetupDone = true;                   // need this for stuff like setting sunrise, cos it needs the time to have been set
+  }
+
+  mesh.update();
+  
+  loopPir();
+  gHueRotate();
+  
+  if (DEBUG_OVERLAY) {
+    showSegmentEndpoints();
+  } else {
+    strip.SetPixelColor(0, _rgbBlack);            // modes are responsible for all other leds
+  }
+  
+  if (DEBUG_MESHSYNC) { }
+ 
   EVERY_N_SECONDS(30) {                           // too much ???
-    if (shouldSaveSettings == true)
+    if (_shouldSaveSettings == true)
     { 
       saveSettings(); 
-      shouldSaveSettings = false; 
+      _shouldSaveSettings = false; 
     }
   }
   //factoryReset();              //TODO           // Press and hold the button to reset to factory defaults
+
+  strip.Show();
+  //delay(_mainLoopDelay); 
 }
 
 
@@ -200,4 +244,3 @@ void pirInterruptPart2() {
   _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
   _timerRunning = true;                           // enable the timer loop in pir
 }
-
