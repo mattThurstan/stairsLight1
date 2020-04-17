@@ -216,6 +216,11 @@ void receiveMessage(uint32_t from, String msg)
     else if (msgSub == LIGHTS_OFF) { DEBUG_COMMS = false; }
     publishDebugCommsState(false);
   }
+  else if(targetSub == "status/request") 
+  {
+    if (msgSub == LIGHTS_ON) { publishStatusAll(false); } 
+    //else if (msgSub == LIGHTS_OFF) {  }
+  }
   
   if (DEBUG_COMMS) { Serial.print(targetSub); Serial.print(" : "); Serial.println(msgSub); }
 }

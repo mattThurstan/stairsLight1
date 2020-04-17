@@ -163,3 +163,21 @@ void publishDebugCommsState(bool save) {
   if (DEBUG_COMMS) { Serial.println(msg); }
   if (save == true) { _shouldSaveSettings = true; }
 }
+
+void publishStatusAll(bool save) {
+  
+  if (DEBUG_COMMS) { Serial.println("publishStatusAll "); }
+  publishState(false);
+  publishSensorTop(false);
+  publishSensorBot(false);
+  publishBrightness(false);
+  publishRGB(false);
+  publishMode(false);
+  publishRiseSpeed(false);
+  publishGHue2Cycle(false);
+  publishDebugGeneralState(false);
+  publishDebugOverlayState(false);
+  publishDebugMeshsyncState(false);
+  publishDebugCommsState(false);
+}
+    

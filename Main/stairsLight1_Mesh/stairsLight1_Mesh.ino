@@ -28,7 +28,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.3";                   // replaced FastLED with NeoPixelBus (just for ESP8266)
+const String _progVers = "0.301";                 // mqtt status request
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -118,18 +118,7 @@ void receivedCallback(uint32_t from, String &msg ) {
 
 void newConnectionCallback(uint32_t nodeId) {
   if (_runonce == true) {
-    publishState(false);
-    publishSensorTop(false);
-    publishSensorBot(false);
-    publishBrightness(false);
-    publishRGB(false);
-    publishMode(false);
-    publishRiseSpeed(false);
-    publishGHue2Cycle(false);
-    publishDebugGeneralState(false);
-    publishDebugOverlayState(false);
-    publishDebugMeshsyncState(false);
-    publishDebugCommsState(false);
+    publishStatusAll(false);
     _runonce = false;
   }
   if (DEBUG_COMMS) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
