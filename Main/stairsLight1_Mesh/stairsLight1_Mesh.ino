@@ -32,7 +32,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.400";                 // cleanup for new install, upgraded ArduinoJson 5 -> 6 and fixed crash at boot with ISR not in IRAM error
+const String _progVers = "0.401";                 // fixing
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -72,10 +72,10 @@ volatile byte _fadeOnDirection = 255;             // direction for fade on loop.
 // crash at boot with ISR not in IRAM error
 void ICACHE_RAM_ATTR pirInterrupt0();
 void ICACHE_RAM_ATTR pirInterrupt1();
-void ICACHE_RAM_ATTR pirInterruptPart2();
+//void ICACHE_RAM_ATTR pirInterruptPart2();
 
 /*----------------------------LED----------------------------*/
-const uint16_t _ledNum = 109;                     // NeoPixelBus - 108 + 1 LEDs
+const uint16_t _ledNum = 96;      //96              // NeoPixelBus - 108 + 1 LEDs
 NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> strip(_ledNum);
 
 typedef struct {
@@ -86,7 +86,7 @@ typedef struct {
 const byte _segmentTotal = 2;                     // (1 + 1) runs down stair banister from top to bottom
 LED_SEGMENT ledSegment[_segmentTotal] = {
   { 0, 0, 1 },  // sacrificial level changer
-  { 1, 108, 108 }
+  { 1, 95, 95 }
 };
 
 uint8_t _ledGlobalBrightnessCur = 255;            // current global brightness - adjust this
@@ -166,9 +166,24 @@ void setup() {
   delay(3000);                                    // give the power, LED strip, etc. a couple of secs to stabilise
   
   loadSettings();
-  setupPIR();
+  
   setupLEDs();
+  strip.ClearTo(_rgbBlack);
+  strip.SetPixelColor(0, _rgbYellow);
+  strip.Show();
+  delay(400);
+  
+  setupPIR();
+  strip.ClearTo(_rgbBlack);
+  strip.SetPixelColor(0, _rgbBlue);
+  strip.Show();
+  delay(400);
+  
   setupMesh();
+  strip.ClearTo(_rgbBlack);
+  strip.SetPixelColor(0, _rgbViolet);
+  strip.Show();
+  delay(400);
 
   //everything done? ok then..
   Serial.print(F("Setup done"));
@@ -179,14 +194,18 @@ void setup() {
   Serial.println("-----");
   Serial.println("");
   
+  strip.ClearTo(_rgbBlack);
+  strip.SetPixelColor(0, _rgbGreen);
+  strip.Show();
   delay(1500);
+  strip.ClearTo(_rgbBlack);
 }
 
 void loop()  {
   
   if(_firstTimeSetupDone == false) {
-    if (DEBUG_GEN) { }
     _firstTimeSetupDone = true;                   // need this for stuff like setting sunrise, cos it needs the time to have been set
+    if (DEBUG_GEN) { Serial.print(F("firstTimeSetupDone  = true")); }
   }
 
   mesh.update();
@@ -217,13 +236,13 @@ void loop()  {
 
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {
-  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
+  if (DEBUG_INTERRUPT) { Serial.println(F("pirInterrupt0")); }
   _pirLastTriggered = 0;  //top
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
-  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
+  if (DEBUG_INTERRUPT) { Serial.println(F("pirInterrupt1")); }
   _pirLastTriggered = 1;  //bottom
   pirInterruptPart2();
 }

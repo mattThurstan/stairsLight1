@@ -158,6 +158,8 @@ void fadeShowLEDs(byte low, byte high) {
  */
 void showSegmentEndpoints() {
   strip.ClearTo(_rgbBlack);
+
+  //strip.SetPixelColor(0, _rgbYellow);
   
   strip.SetPixelColor(ledSegment[1].first, _rgbRed);
   strip.SetPixelColor(ledSegment[1].last, _rgbRed);

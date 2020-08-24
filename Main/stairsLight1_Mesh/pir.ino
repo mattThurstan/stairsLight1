@@ -18,6 +18,7 @@ void loopPir()  {
       //when the time has expired, do this..
       if (_state == 1 || _state == 2) {
         _state = 3;
+        if (DEBUG_INTERRUPT) { Serial.print(F("State = 3")); }
       }
       _timerRunning = false;                      // disable itself
       //publishState();
@@ -63,6 +64,7 @@ void fadeOn() {
       fadeShowLEDs(ledSegment[1].first, i);
       if (i == ledSegment[1].last) { 
         _state = 2;
+        if (DEBUG_INTERRUPT) { Serial.print(F("State = 2")); }
         return;
       }
     }
@@ -73,6 +75,7 @@ void fadeOn() {
       fadeShowLEDs(i, ledSegment[1].last);
       if (i == ledSegment[1].first) { 
         _state = 2;
+        if (DEBUG_INTERRUPT) { Serial.print(F("State = 2")); }
         return;
       }
     }
@@ -90,6 +93,7 @@ void fadeOff() {
       if (i == ledSegment[1].first) { 
         strip.SetPixelColor(1, _rgbBlack);        // turn off the last pixel before changing state
         _state = 0;
+        if (DEBUG_INTERRUPT) { Serial.print(F("State = 0")); }
         return;
       }
     }
@@ -102,6 +106,7 @@ void fadeOff() {
       if (i == ledSegment[1].last) {    
         strip.SetPixelColor(11, _rgbBlack);       // turn off the last pixel before changing state
         _state = 0;
+        if (DEBUG_INTERRUPT) { Serial.print(F("State = 0")); }
         return;
       }
     }
