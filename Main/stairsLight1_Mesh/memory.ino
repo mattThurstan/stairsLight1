@@ -20,27 +20,41 @@ void loadSettings()
                 std::unique_ptr<char[]> buf(new char[size]);
 
                 configFile.readBytes(buf.get(), size);
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& json = jsonBuffer.parseObject(buf.get());
-                if (DEBUG_GEN) { json.printTo(Serial); }
-                if (json.success())
+                //DynamicJsonBuffer jsonBuffer;
+                DynamicJsonDocument jsonDoc(512);
+                //JsonObject& json = jsonBuffer.parseObject(buf.get());
+                //auto error = deserializeJson(jsonDoc, buf.get());
+                DeserializationError error = deserializeJson(jsonDoc, buf.get());
+                if (DEBUG_GEN) { 
+                  //json.printTo(Serial); 
+                  serializeJson(jsonDoc, Serial);
+                }
+                if (error)
+                {
+                    if (DEBUG_GEN) { Serial.println("failed to load json user settings"); }
+                }
+                else
                 {
                     if (DEBUG_GEN) { Serial.println("\nparsed json"); }
 
                     //_pirHoldInterval
-                    _ledGlobalBrightnessCur = json["gBrightnessCur"];
-                    _ledRiseSpeedSaved = json["ledRiseSpeedSaved"];
-                    checkAndSetLedRiseSpeed();
-                    _gHue2CycleSaved = json["gHue2CycleSaved"];
-                    checkAndSetGHue2CycleMillis();
-                    _colorHSL.H = json["colorHSL_H"];
-                    _colorHSL.S = json["colorHSL_S"];
-                    _colorHSL.L = json["colorHSL_L"];
+                    //_ledGlobalBrightnessCur = json["gBrightnessCur"];
+                    //_ledRiseSpeedSaved = json["ledRiseSpeedSaved"];
+                    //checkAndSetLedRiseSpeed();
+                    //_gHue2CycleSaved = json["gHue2CycleSaved"];
+                    //checkAndSetGHue2CycleMillis();
+                    //_colorHSL.H = json["colorHSL_H"];
+                    //_colorHSL.S = json["colorHSL_S"];
+                    //_colorHSL.L = json["colorHSL_L"];
                     
-                }
-                else
-                {
-                    if (DEBUG_GEN) { Serial.println("failed to load json user settings"); }
+                    _ledGlobalBrightnessCur = jsonDoc["gBrightnessCur"];
+                    _ledRiseSpeedSaved = jsonDoc["ledRiseSpeedSaved"];
+                    checkAndSetLedRiseSpeed();
+                    _gHue2CycleSaved = jsonDoc["gHue2CycleSaved"];
+                    checkAndSetGHue2CycleMillis();
+                    _colorHSL.H = jsonDoc["colorHSL_H"];
+                    _colorHSL.S = jsonDoc["colorHSL_S"];
+                    _colorHSL.L = jsonDoc["colorHSL_L"];
                 }
             }
         }
@@ -55,8 +69,10 @@ void loadSettings()
 void saveSettings()
 {
   if (DEBUG_GEN) { Serial.println("saving user settings"); }
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& json = jsonBuffer.createObject();
+  //DynamicJsonBuffer jsonBuffer;
+  DynamicJsonDocument jsonDoc(512);
+  //JsonObject& json = jsonBuffer.createObject();
+  JsonObject json = jsonDoc.to<JsonObject>();
   
   //_pirHoldInterval
   json["gBrightnessCur"] = _ledGlobalBrightnessCur;
@@ -69,8 +85,10 @@ void saveSettings()
   File settingsFile = SPIFFS.open("/settings.json", "w");
   if (!settingsFile && DEBUG_GEN) { Serial.println("failed to open user settings file for writing"); }
   if (DEBUG_GEN) { 
-    json.printTo(Serial);
-    json.printTo(settingsFile);
+    //json.printTo(Serial);
+    serializeJson(jsonDoc, Serial);
+    //json.printTo(settingsFile);
+    serializeJson(jsonDoc, settingsFile);
   }
   settingsFile.close();
 }

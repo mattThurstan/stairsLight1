@@ -1,6 +1,8 @@
 /*
     'stairsLight1_Mesh' by Thurstan. LEDs controlled by motion sensors.
-    Copyright (C) 2019 MTS Standish (mattThurstan)
+    Copyright (C) 2020 MTS Standish (Thurstan|mattKsp)
+    
+    https://github.com/mattThurstan/
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +18,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
     https://github.com/mattThurstan/
+    
+    WeMos D1 (R2 &) mini ESP8266, 80 MHz, 115200 baud, 4M, (1M SPIFFS)
 */
 
 
@@ -28,7 +32,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.301";                 // mqtt status request
+const String _progVers = "0.400";                 // cleanup for new install, upgraded ArduinoJson 5 -> 6 and fixed crash at boot with ISR not in IRAM error
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -65,6 +69,10 @@ volatile unsigned long _pirHoldPrevMillis = 0;
 volatile byte _pirLastTriggered = 255;            // last PIR sensor triggered (0=top or 1=bottom)
 volatile boolean _timerRunning = false;           // is the hold timer in use?
 volatile byte _fadeOnDirection = 255;             // direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
+// crash at boot with ISR not in IRAM error
+void ICACHE_RAM_ATTR pirInterrupt0();
+void ICACHE_RAM_ATTR pirInterrupt1();
+void ICACHE_RAM_ATTR pirInterruptPart2();
 
 /*----------------------------LED----------------------------*/
 const uint16_t _ledNum = 109;                     // NeoPixelBus - 108 + 1 LEDs
@@ -77,7 +85,7 @@ typedef struct {
 } LED_SEGMENT;
 const byte _segmentTotal = 2;                     // (1 + 1) runs down stair banister from top to bottom
 LED_SEGMENT ledSegment[_segmentTotal] = {
-  { 0, 0, 1 },
+  { 0, 0, 1 },  // sacrificial level changer
   { 1, 108, 108 }
 };
 
@@ -143,7 +151,8 @@ void setup() {
   
   // LED strip - Wemos D1 - GPIO 3 (RX) - swap the pin from serial to a GPIO.
   pinMode(3, FUNCTION_3); // FUNCTION_0 = swap back
-  
+
+  // start serial regardless but control debug output from mqtt
   Serial.begin(115200);
   
   Serial.println();
@@ -169,7 +178,7 @@ void setup() {
   Serial.println(s);
   Serial.println("-----");
   Serial.println("");
-
+  
   delay(1500);
 }
 
@@ -193,7 +202,7 @@ void loop()  {
   
   if (DEBUG_MESHSYNC) { }
  
-  EVERY_N_SECONDS(30) {                           // too much ???
+  EVERY_N_SECONDS(60) {                           // too much ???
     if (_shouldSaveSettings == true)
     { 
       saveSettings(); 
@@ -205,7 +214,6 @@ void loop()  {
   strip.Show();
   //delay(_mainLoopDelay); 
 }
-
 
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {

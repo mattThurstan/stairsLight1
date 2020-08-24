@@ -1,6 +1,6 @@
 /*----------------------------setup pir----------------------------*/
 void setupPIR() {
-  
+  if (DEBUG_GEN) { Serial.println("Setup PIR"); }
   //setup PIR pins and attach interrupts
   pinMode(_pirPin[0], INPUT_PULLUP);
   pinMode(_pirPin[1], INPUT_PULLUP);
