@@ -32,7 +32,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.401";                 // fixing
+const String _progVers = "0.402";                 // working
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -75,7 +75,7 @@ void ICACHE_RAM_ATTR pirInterrupt1();
 //void ICACHE_RAM_ATTR pirInterruptPart2();
 
 /*----------------------------LED----------------------------*/
-const uint16_t _ledNum = 96;      //96              // NeoPixelBus - 108 + 1 LEDs
+const uint16_t _ledNum = 99;                      // NeoPixelBus - 98 + 1 LEDs
 NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> strip(_ledNum);
 
 typedef struct {
@@ -86,7 +86,7 @@ typedef struct {
 const byte _segmentTotal = 2;                     // (1 + 1) runs down stair banister from top to bottom
 LED_SEGMENT ledSegment[_segmentTotal] = {
   { 0, 0, 1 },  // sacrificial level changer
-  { 1, 95, 95 }
+  { 1, 99, 98 }
 };
 
 uint8_t _ledGlobalBrightnessCur = 255;            // current global brightness - adjust this
