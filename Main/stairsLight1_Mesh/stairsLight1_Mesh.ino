@@ -32,7 +32,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.402";                 // working
+const String _progVers = "0.403";                 // 0 + 1 -> 98 ...can't count
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -53,7 +53,7 @@ bool _isBreathingSynced = false;                  // breath sync local or global
 /*----------------------------pins----------------------------*/
 // NeoPixelBus - For Esp8266, the Pin is omitted and it uses GPIO3 (RX) due to DMA hardware use. 
 //2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
-const byte _pirPin[2] = { 5, 4 }; // D1, D2       // 2 PIR sensors on interrupt pins (triggered on HIGH)
+const byte _pirPin[2] = { 4, 5 }; // D2, D1       // 2 PIR sensors on interrupt pins (triggered on HIGH)
 
 /*----------------------------modes----------------------------*/
 const int _modeNum = 2;                           // normal, cycle (gHue)
@@ -61,7 +61,7 @@ volatile int _modeCur = 1;                        // current mode in use
 String _modeName[_modeNum] = { "Normal", "Cycle" };
 
 /*----------------------------PIR----------------------------*/
-const unsigned long _pirHoldInterval = 30000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+const unsigned long _pirHoldInterval = 6000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
 volatile byte _state = 0;                         // 0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                     // temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
@@ -86,7 +86,7 @@ typedef struct {
 const byte _segmentTotal = 2;                     // (1 + 1) runs down stair banister from top to bottom
 LED_SEGMENT ledSegment[_segmentTotal] = {
   { 0, 0, 1 },  // sacrificial level changer
-  { 1, 99, 98 }
+  { 1, 98, 98 }
 };
 
 uint8_t _ledGlobalBrightnessCur = 255;            // current global brightness - adjust this
