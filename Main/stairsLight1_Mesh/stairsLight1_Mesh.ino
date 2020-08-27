@@ -32,7 +32,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.403";                 // 0 + 1 -> 98 ...can't count
+const String _progVers = "0.41";                  // tweaks and added a day mode toggle
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -43,6 +43,7 @@ boolean DEBUG_USERINPUT = false;                  // realtime serial debugging o
 
 boolean _firstTimeSetupDone = false;              // starts false //this is mainly to catch an interrupt trigger that happens during setup, but is usefull for other things
 //volatile boolean _onOff = true; //flip _state // issues with mqtt and init false // this should init false, then get activated by input - on/off true/false
+bool _dayMode = false;                           // whether or not to run if night or day. default to night just so it works in case something goes wrong.
 bool _shouldSaveSettings = false;                 // flag for saving data
 bool _runonce = true;                             // flag for sending states when first mesh conection
 //const int _mainLoopDelay = 0;                     // just in case  - using FastLED.delay instead..
@@ -205,12 +206,14 @@ void loop()  {
   
   if(_firstTimeSetupDone == false) {
     _firstTimeSetupDone = true;                   // need this for stuff like setting sunrise, cos it needs the time to have been set
+    publishStatusAll(false);
     if (DEBUG_GEN) { Serial.print(F("firstTimeSetupDone  = true")); }
   }
 
   mesh.update();
   
   loopPir();
+  loopBreathing();                                // overlaid on top, cos stairs lights are important
   gHueRotate();
   
   if (DEBUG_OVERLAY) {
@@ -253,9 +256,9 @@ void pirInterruptPart2() {
     _fadeOnDirection = _pirLastTriggered;
   }
   if (_pirLastTriggered == 0) {
-    publishSensorTop(true);
-  } else if (_pirLastTriggered == 1) {
     publishSensorBot(true);
+  } else if (_pirLastTriggered == 1) {
+    publishSensorTop(true);
   }
   _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
   _timerRunning = true;                           // enable the timer loop in pir

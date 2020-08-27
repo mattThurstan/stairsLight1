@@ -20,13 +20,9 @@ void loadSettings()
                 std::unique_ptr<char[]> buf(new char[size]);
 
                 configFile.readBytes(buf.get(), size);
-                //DynamicJsonBuffer jsonBuffer;
                 DynamicJsonDocument jsonDoc(512);
-                //JsonObject& json = jsonBuffer.parseObject(buf.get());
-                //auto error = deserializeJson(jsonDoc, buf.get());
                 DeserializationError error = deserializeJson(jsonDoc, buf.get());
                 if (DEBUG_GEN) { 
-                  //json.printTo(Serial); 
                   serializeJson(jsonDoc, Serial);
                 }
                 if (error)
@@ -37,16 +33,6 @@ void loadSettings()
                 {
                     if (DEBUG_GEN) { Serial.println("\nparsed json"); }
 
-                    //_pirHoldInterval
-                    //_ledGlobalBrightnessCur = json["gBrightnessCur"];
-                    //_ledRiseSpeedSaved = json["ledRiseSpeedSaved"];
-                    //checkAndSetLedRiseSpeed();
-                    //_gHue2CycleSaved = json["gHue2CycleSaved"];
-                    //checkAndSetGHue2CycleMillis();
-                    //_colorHSL.H = json["colorHSL_H"];
-                    //_colorHSL.S = json["colorHSL_S"];
-                    //_colorHSL.L = json["colorHSL_L"];
-                    
                     _ledGlobalBrightnessCur = jsonDoc["gBrightnessCur"];
                     _ledRiseSpeedSaved = jsonDoc["ledRiseSpeedSaved"];
                     checkAndSetLedRiseSpeed();
@@ -69,9 +55,7 @@ void loadSettings()
 void saveSettings()
 {
   if (DEBUG_GEN) { Serial.println("saving user settings"); }
-  //DynamicJsonBuffer jsonBuffer;
   DynamicJsonDocument jsonDoc(512);
-  //JsonObject& json = jsonBuffer.createObject();
   JsonObject json = jsonDoc.to<JsonObject>();
   
   //_pirHoldInterval
@@ -85,10 +69,35 @@ void saveSettings()
   File settingsFile = SPIFFS.open("/settings.json", "w");
   if (!settingsFile && DEBUG_GEN) { Serial.println("failed to open user settings file for writing"); }
   if (DEBUG_GEN) { 
-    //json.printTo(Serial);
     serializeJson(jsonDoc, Serial);
-    //json.printTo(settingsFile);
     serializeJson(jsonDoc, settingsFile);
   }
   settingsFile.close();
+}
+
+void resetDefaults() {
+  boolean DEBUG_GEN = false;
+  boolean DEBUG_OVERLAY = false;
+  boolean DEBUG_MESHSYNC = false;
+  boolean DEBUG_COMMS = false;
+  boolean DEBUG_INTERRUPT = false;
+  boolean DEBUG_USERINPUT = false;
+  
+  bool _isBreathing = false;
+  bool _isBreathOverlaid = false;
+  bool _isBreathingSynced = false; 
+
+  _dayMode = false; 
+  
+  _modeCur = 1;
+  _state = 0;
+
+  _ledGlobalBrightnessCur = 255; 
+  _ledRiseSpeedSaved = 25;
+  _gHue2CycleSaved = 50;
+  _colorHSL.H = 0.25f;
+  _colorHSL.S = 0.5f;
+  _colorHSL.L = 0.5f;
+
+  saveSettings();
 }

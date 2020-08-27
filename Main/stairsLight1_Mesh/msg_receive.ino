@@ -7,21 +7,31 @@ void receiveMessage(uint32_t from, String msg)
 
   if (targetSub == "lights/light/switch")
   {
-    if (msgSub == LIGHTS_ON)  //"ON"
-    {
+    if (msgSub == LIGHTS_ON) {
       if (_state == 0) {
         pirInterrupt0();  //trigger bot sensor
         publishState(true);
       }
     }
-    else if (msgSub == LIGHTS_OFF)  //"OFF"
-    {
+    else if (msgSub == LIGHTS_OFF) {
       if (_state != 0) {
         _state = 3; //force a fade out
         //does a 'publish state' from 'loopPir' when finished fade out
       }
     }
-  } 
+  }
+  if (targetSub == "lights/day") {
+    if (msgSub == LIGHTS_ON) { _dayMode = true; }
+    else if (msgSub == LIGHTS_OFF) { 
+      _dayMode = false;
+      if (_state == 1 || _state == 2 || _state == 3) {
+        fadeOff();  // _state gets set to 0 at end of fadeOff
+        publishState(true);
+        publishSensorTop(true);
+        publishSensorBot(true);
+      }
+    }
+  }
   else if (targetSub == "lights/brightness/set")
   {
     uint8_t brightness = msgSub.toInt();
@@ -215,6 +225,11 @@ void receiveMessage(uint32_t from, String msg)
     if (msgSub == LIGHTS_ON) { DEBUG_COMMS = true; } 
     else if (msgSub == LIGHTS_OFF) { DEBUG_COMMS = false; }
     publishDebugCommsState(false);
+  }
+  else if(targetSub == "debug/reset") 
+  {
+    // don't really need an ON msg but using just to sure it wasn't sent in error
+    if (msgSub == LIGHTS_ON) { resetDefaults(); }
   }
   else if(targetSub == "status/request") 
   {

@@ -9,49 +9,49 @@ void setupPIR() {
 }
 
 /*----------------------------loop pir----------------------------*/
-void loopPir()  {
-  
-  if (_timerRunning) {
-    //lights on hold timer
-    unsigned long pirHoldCurMillis = millis();    // get current time
-    if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
-      //when the time has expired, do this..
-      if (_state == 1 || _state == 2) {
-        _state = 3;
-        if (DEBUG_INTERRUPT) { Serial.print(F("State = 3")); }
-      }
-      _timerRunning = false;                      // disable itself
-      //publishState();
-      //publishSensorTop();
-      //publishSensorBot();
-    }
-  }
-  
-  if (_state == 0) {
-    //off
-    RgbColor color;
-    for (uint16_t i = 1; i < strip.PixelCount(); i++)
-    {
-        color = strip.GetPixelColor(i);
-        color.Darken(2); //uint8_t darkenBy
-        strip.SetPixelColor(i, color);
-    }
-  } else if (_state == 1) {
-    //fade on
-    fadeOn();
-  } else if (_state == 2) {
-    //on
-  //_leds(ledSegment[0].first, ledSegment[0].last).fill_gradient(_topColorHSV, _botColorHSV);
-  strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last);
-  } else if (_state == 3) {
-    //fade off
-    fadeOff();
-    publishState(true);
-    publishSensorTop(true);
-    publishSensorBot(true);
-  }
+// if _dayMode is set to TRUE (day) then the lights will not turn on (breathing is still seperate).
 
-  loopBreathing();                                // overlaid on top, cos stairs lights are important
+void loopPir()  {
+  if (_dayMode == false) { 
+    if (_timerRunning) {
+      //lights on hold timer
+      unsigned long pirHoldCurMillis = millis();    // get current time
+      if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
+        //when the time has expired, do this..
+        if (_state == 1 || _state == 2) {
+          _state = 3;
+          if (DEBUG_INTERRUPT) { Serial.print(F("State = 3")); }
+        }
+        _timerRunning = false;                      // disable itself
+        //publishState();
+        //publishSensorTop();
+        //publishSensorBot();
+      }
+    }
+    
+    if (_state == 0) {
+      //off
+      RgbColor color;
+      for (uint16_t i = 1; i < strip.PixelCount(); i++)
+      {
+          color = strip.GetPixelColor(i);
+          color.Darken(2); //uint8_t darkenBy
+          strip.SetPixelColor(i, color);
+      }
+    } else if (_state == 1) {
+      //fade on
+      fadeOn();
+    } else if (_state == 2) {
+      //on
+      strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last);
+    } else if (_state == 3) {
+      //fade off
+      fadeOff();
+      publishState(true);
+      publishSensorTop(true);
+      publishSensorBot(true);
+    }
+  }
 }
 
 void fadeOn() {
