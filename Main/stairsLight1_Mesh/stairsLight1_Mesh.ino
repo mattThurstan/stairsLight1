@@ -23,16 +23,15 @@
 */
 
 
+#include <MT_LightControlDefines.h>
 #include <FS.h>                                   // file system
 #include <FastLED.h>                              // still using some bits
 #include <NeoPixelBrightnessBus.h>                // NeoPixelBrightnessBus (just for ESP8266)- for brightness functions (instead of NeoPixelBus.h)
 #include "painlessMesh.h"
-#include <MT_LightControlDefines.h>
-
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.41";                  // tweaks and added a day mode toggle
+const String _progVers = "0.411";                 // tweak day mode
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -42,8 +41,8 @@ boolean DEBUG_INTERRUPT = false;                  // realtime serial debugging o
 boolean DEBUG_USERINPUT = false;                  // realtime serial debugging output - user input
 
 boolean _firstTimeSetupDone = false;              // starts false //this is mainly to catch an interrupt trigger that happens during setup, but is usefull for other things
-//volatile boolean _onOff = true; //flip _state // issues with mqtt and init false // this should init false, then get activated by input - on/off true/false
-bool _dayMode = false;                           // whether or not to run if night or day. default to night just so it works in case something goes wrong.
+//volatile boolean _onOff = true; /    /flip _state // issues with mqtt and init false // this should init false, then get activated by input - on/off true/false
+bool _dayMode = false;                            // whether or not to run if night or day. default to night just so it works in case something goes wrong.
 bool _shouldSaveSettings = false;                 // flag for saving data
 bool _runonce = true;                             // flag for sending states when first mesh conection
 //const int _mainLoopDelay = 0;                     // just in case  - using FastLED.delay instead..
@@ -62,7 +61,7 @@ volatile int _modeCur = 1;                        // current mode in use
 String _modeName[_modeNum] = { "Normal", "Cycle" };
 
 /*----------------------------PIR----------------------------*/
-const unsigned long _pirHoldInterval = 6000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+const unsigned long _pirHoldInterval = 10000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
 volatile byte _state = 0;                         // 0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                     // temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
@@ -92,8 +91,8 @@ LED_SEGMENT ledSegment[_segmentTotal] = {
 
 uint8_t _ledGlobalBrightnessCur = 255;            // current global brightness - adjust this
 uint8_t _ledBrightnessIncDecAmount = 10;          // the brightness amount to increase or decrease
-unsigned long _ledRiseSpeed = 25; //35;           // speed at which the LEDs turn on (runs backwards)
-uint8_t _ledRiseSpeedSaved = 25;                  // cos of saving / casting unsigned long issues - use 0-255 via mqtt
+unsigned long _ledRiseSpeed = 30; //25 //35;      // speed at which the LEDs turn on (runs backwards)
+uint8_t _ledRiseSpeedSaved = 30;                  // cos of saving / casting unsigned long issues - use 0-255 via mqtt
 uint8_t _gHue2 = 0;                               // incremental cycling "base color", 0-100, converted to 0-1
 uint8_t _gHue2saved = 0;                          // used to revert color when going back to 'Normal' mode
 unsigned long _gHue2CycleMillis = 200UL;          // gHue loop update time (millis)
