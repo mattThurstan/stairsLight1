@@ -17,16 +17,16 @@ void loopPir()  {
     unsigned long pirHoldCurMillis = millis();    // get current time
     if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
       //when the time has expired, do this..
-      if (_dayMode == false) { 
+      //if (_dayMode == false) { 
           if (_state == 1 || _state == 2) {
             _state = 3;
             if (DEBUG_INTERRUPT) { Serial.print(F("State = 3")); }
-          }
-      } else {
-        _state = 0;
-        publishSensorTop(true);
-        publishSensorBot(true);
-      }
+      //    }
+      } //else {
+      //  _state = 0;
+      //  publishSensorTop(true);
+      //  publishSensorBot(true);
+      //}
       _timerRunning = false;                      // disable itself
     }
   }
@@ -42,18 +42,25 @@ void loopPir()  {
     }
   } else if (_state == 1) {
     //fade on
-    if (_dayMode == false) { fadeOn(); }
+    //if (_dayMode == false) { 
+      fadeOn(); 
+      //}
   } else if (_state == 2) {
     //on
-    if (_dayMode == false) { strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last); }
+    //if (_dayMode == false) { 
+      strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last); 
+    //}
+      publishState(true);
+      publishSensorTop(true);
+      publishSensorBot(true);
   } else if (_state == 3) {
     //fade off
-    if (_dayMode == false) {
+    //if (_dayMode == false) {
       fadeOff();
       publishState(true);
       publishSensorTop(true);
       publishSensorBot(true);
-    }
+    //}
   }
 }
 
@@ -67,7 +74,7 @@ void fadeOn() {
       fadeShowLEDs(ledSegment[1].first, i);
       if (i == ledSegment[1].last) { 
         _state = 2;
-        if (DEBUG_INTERRUPT) { Serial.print(F("State = 2")); }
+        if (DEBUG_INTERRUPT) { Serial.println("State = 2"); }
         return;
       }
     }
@@ -78,7 +85,7 @@ void fadeOn() {
       fadeShowLEDs(i, ledSegment[1].last);
       if (i == ledSegment[1].first) { 
         _state = 2;
-        if (DEBUG_INTERRUPT) { Serial.print(F("State = 2")); }
+        if (DEBUG_INTERRUPT) { Serial.println("State = 2"); }
         return;
       }
     }
@@ -96,7 +103,7 @@ void fadeOff() {
       if (i == ledSegment[1].first) { 
         strip.SetPixelColor(1, _rgbBlack);        // turn off the last pixel before changing state
         _state = 0;
-        if (DEBUG_INTERRUPT) { Serial.print(F("State = 0")); }
+        if (DEBUG_INTERRUPT) { Serial.print("State = 0"); }
         return;
       }
     }
@@ -109,7 +116,7 @@ void fadeOff() {
       if (i == ledSegment[1].last) {    
         strip.SetPixelColor(11, _rgbBlack);       // turn off the last pixel before changing state
         _state = 0;
-        if (DEBUG_INTERRUPT) { Serial.print(F("State = 0")); }
+        if (DEBUG_INTERRUPT) { Serial.print("State = 0"); }
         return;
       }
     }

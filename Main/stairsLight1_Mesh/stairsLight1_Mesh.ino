@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.411";                 // tweak day mode
+const String _progVers = "0.412";                 // more day mode tweaks
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -96,7 +96,7 @@ uint8_t _ledRiseSpeedSaved = 30;                  // cos of saving / casting uns
 uint8_t _gHue2 = 0;                               // incremental cycling "base color", 0-100, converted to 0-1
 uint8_t _gHue2saved = 0;                          // used to revert color when going back to 'Normal' mode
 unsigned long _gHue2CycleMillis = 200UL;          // gHue loop update time (millis)
-uint8_t _gHue2CycleSaved = 50;                    // 0-255 mapped to millis range
+uint8_t _gHue2CycleSaved = 100;                    // 0-255 mapped to millis range
 uint8_t _gHue2CycleMultiplier = 4;                // (__gHue2CycleSaved * _gHue2CycleMultiplier) = (unsigned long) _gHue2CycleMillis
 unsigned long _gHue2PrevMillis;                   // gHue loop previous time (millis)
 
@@ -120,7 +120,7 @@ painlessMesh  mesh;                               // initialise
 uint32_t id = DEVICE_ID_BRIDGE1;
 
 void receivedCallback(uint32_t from, String &msg ) {
-  if (DEBUG_COMMS) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
+  if (DEBUG_COMMS) { Serial.println("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
   receiveMessage(from, msg);
 }
 
@@ -129,20 +129,20 @@ void newConnectionCallback(uint32_t nodeId) {
     publishStatusAll(false);
     _runonce = false;
   }
-  if (DEBUG_COMMS) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
+  if (DEBUG_COMMS) { Serial.println("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
 }
 
 void changedConnectionCallback() {
   //publish..
-  if (DEBUG_COMMS) { Serial.printf("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
+  if (DEBUG_COMMS) { Serial.println("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-  if (DEBUG_COMMS) { Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
+  if (DEBUG_COMMS) { Serial.println("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
 }
 
 void delayReceivedCallback(uint32_t from, int32_t delay) {
-  if (DEBUG_COMMS) { Serial.printf("Delay to node %u is %d us\n", from, delay); }
+  if (DEBUG_COMMS) { Serial.println("Delay to node %u is %d us\n", from, delay); }
 }
 
 
@@ -203,13 +203,13 @@ void setup() {
 
 void loop()  {
   
+  mesh.update();
+  
   if(_firstTimeSetupDone == false) {
     _firstTimeSetupDone = true;                   // need this for stuff like setting sunrise, cos it needs the time to have been set
     publishStatusAll(false);
     if (DEBUG_GEN) { Serial.print(F("firstTimeSetupDone  = true")); }
   }
-
-  mesh.update();
   
   loopPir();
   loopBreathing();                                // overlaid on top, cos stairs lights are important
@@ -220,7 +220,6 @@ void loop()  {
   } else {
     strip.SetPixelColor(0, _rgbBlack);            // modes are responsible for all other leds
   }
-  
   if (DEBUG_MESHSYNC) { }
  
   EVERY_N_SECONDS(60) {                           // too much ???
@@ -238,20 +237,22 @@ void loop()  {
 
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {
-  if (DEBUG_INTERRUPT) { Serial.println(F("pirInterrupt0")); }
+  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
   _pirLastTriggered = 0;  //top
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
-  if (DEBUG_INTERRUPT) { Serial.println(F("pirInterrupt1")); }
+  if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt1"); }
   _pirLastTriggered = 1;  //bottom
   pirInterruptPart2();
 }
 
 void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
-    _state = 1;                                   // if off or fading down, then fade back up again
+    if (_dayMode == false) { 
+      _state = 1;                                   // if off or fading down, then fade back up again
+    }
     _fadeOnDirection = _pirLastTriggered;
   }
   if (_pirLastTriggered == 0) {
@@ -259,6 +260,8 @@ void pirInterruptPart2() {
   } else if (_pirLastTriggered == 1) {
     publishSensorTop(true);
   }
-  _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
-  _timerRunning = true;                           // enable the timer loop in pir
+  if (_dayMode == false) { 
+    _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
+    _timerRunning = true;                           // enable the timer loop in pir
+  }
 }
