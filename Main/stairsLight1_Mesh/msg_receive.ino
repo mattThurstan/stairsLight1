@@ -8,7 +8,7 @@ void receiveMessage(uint32_t from, String msg)
   if (targetSub == "lights/light/switch")
   {
     if (msgSub == LIGHTS_ON) {
-      if (_state == 0 || _state == 3)
+      if (_state == 0 || _state == 3) {
       _state = 1;
       //if (_state == 0) {
       //  pirInterrupt0();  //trigger bot sensor
@@ -23,7 +23,7 @@ void receiveMessage(uint32_t from, String msg)
       }
     }
   }
-  if (targetSub == "lights/day") {
+  else if (targetSub == "lights/day") {
     if (msgSub == LIGHTS_ON) { _dayMode = true; }
     else if (msgSub == LIGHTS_OFF) { 
       _dayMode = false;

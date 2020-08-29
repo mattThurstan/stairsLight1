@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.412";                 // more day mode tweaks
+const String _progVers = "0.413";                 // fix
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -120,7 +120,7 @@ painlessMesh  mesh;                               // initialise
 uint32_t id = DEVICE_ID_BRIDGE1;
 
 void receivedCallback(uint32_t from, String &msg ) {
-  if (DEBUG_COMMS) { Serial.println("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
+  if (DEBUG_COMMS) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
   receiveMessage(from, msg);
 }
 
@@ -129,20 +129,20 @@ void newConnectionCallback(uint32_t nodeId) {
     publishStatusAll(false);
     _runonce = false;
   }
-  if (DEBUG_COMMS) { Serial.println("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
+  if (DEBUG_COMMS) { Serial.printf("--> stairsLight1_Mesh: New Connection, nodeId = %u\n", nodeId); }
 }
 
 void changedConnectionCallback() {
   //publish..
-  if (DEBUG_COMMS) { Serial.println("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
+  if (DEBUG_COMMS) { Serial.printf("Changed connections %s\n",mesh.subConnectionJson().c_str()); }
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-  if (DEBUG_COMMS) { Serial.println("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
+  if (DEBUG_COMMS) { Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset); }
 }
 
 void delayReceivedCallback(uint32_t from, int32_t delay) {
-  if (DEBUG_COMMS) { Serial.println("Delay to node %u is %d us\n", from, delay); }
+  if (DEBUG_COMMS) { Serial.printf("Delay to node %u is %d us\n", from, delay); }
 }
 
 
