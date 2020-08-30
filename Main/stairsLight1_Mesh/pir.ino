@@ -12,22 +12,18 @@ void setupPIR() {
 // if _dayMode is set to TRUE (day) then the lights will not turn on (breathing is still seperate).
 
 void loopPir()  {
-  if (_timerRunning) {
-    //lights on hold timer
+  if (_PIRtriggeredTimerRunning) {
+    //pir timer - flips lights state if not in day mode
     unsigned long pirHoldCurMillis = millis();    // get current time
     if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
       //when the time has expired, do this..
-      //if (_dayMode == false) { 
-          if (_state == 1 || _state == 2) {
-            _state = 3;
-            if (DEBUG_INTERRUPT) { Serial.print(F("State = 3")); }
-      //    }
-      } //else {
-      //  _state = 0;
-      //  publishSensorTop(true);
-      //  publishSensorBot(true);
-      //}
-      _timerRunning = false;                      // disable itself
+      if ((_state == 1 || _state == 2) && _dayMode == false) {
+        _state = 3;
+        if (DEBUG_INTERRUPT) { Serial.print("State = 3"); }
+      }
+      publishSensorTopOff(true);
+      publishSensorBotOff(true);
+      _PIRtriggeredTimerRunning = false;                      // disable itself
     }
   }
   
@@ -41,26 +37,16 @@ void loopPir()  {
         strip.SetPixelColor(i, color);
     }
   } else if (_state == 1) {
-    //fade on
-    //if (_dayMode == false) { 
-      fadeOn(); 
-      //}
+    publishState(true);
+    publishBrightness(true);
+    publishRGB(true);
+    fadeOn();
   } else if (_state == 2) {
     //on
-    //if (_dayMode == false) { 
-      strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last); 
-    //}
-      publishState(true);
-      publishSensorTop(true);
-      publishSensorBot(true);
+    strip.ClearTo(_colorHSL, ledSegment[1].first, ledSegment[1].last); 
   } else if (_state == 3) {
-    //fade off
-    //if (_dayMode == false) {
-      fadeOff();
-      publishState(true);
-      publishSensorTop(true);
-      publishSensorBot(true);
-    //}
+    publishState(true);
+    fadeOff();
   }
 }
 

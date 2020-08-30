@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.413";                 // fix
+const String _progVers = "0.415";                 // missed a bit
 
 boolean DEBUG_GEN = false;                        // realtime serial debugging output - general
 boolean DEBUG_OVERLAY = false;                    // show debug overlay on leds (eg. show segment endpoints, center, etc.)
@@ -67,7 +67,7 @@ volatile byte _stateSave = 0;                     // temp save state for inside 
 //direction for fade on/off is determined by last pir triggered
 volatile unsigned long _pirHoldPrevMillis = 0;
 volatile byte _pirLastTriggered = 255;            // last PIR sensor triggered (0=top or 1=bottom)
-volatile boolean _timerRunning = false;           // is the hold timer in use?
+volatile boolean _PIRtriggeredTimerRunning = false;           // is the hold timer in use?
 volatile byte _fadeOnDirection = 255;             // direction for fade on loop. 0=fade down the stairs (top to bot), 1=fade up the stairs (bot to top).
 // crash at boot with ISR not in IRAM error
 void ICACHE_RAM_ATTR pirInterrupt0();
@@ -250,18 +250,18 @@ void pirInterrupt1() {
 
 void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
-    if (_dayMode == false) { 
+    if (_dayMode == false) {
       _state = 1;                                   // if off or fading down, then fade back up again
     }
     _fadeOnDirection = _pirLastTriggered;
   }
   if (_pirLastTriggered == 0) {
-    publishSensorBot(true);
+    //publishSensorBot(true);
+    publishSensorBotOn(true);
   } else if (_pirLastTriggered == 1) {
-    publishSensorTop(true);
+    //publishSensorTop(true);
+    publishSensorTopOn(true);
   }
-  if (_dayMode == false) { 
-    _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
-    _timerRunning = true;                           // enable the timer loop in pir
-  }
+  _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
+  _PIRtriggeredTimerRunning = true;                           // enable the timer loop in pir
 }

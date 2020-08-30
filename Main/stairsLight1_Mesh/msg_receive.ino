@@ -9,32 +9,28 @@ void receiveMessage(uint32_t from, String msg)
   {
     if (msgSub == LIGHTS_ON) {
       if (_state == 0 || _state == 3) {
-      _state = 1;
-      //if (_state == 0) {
-      //  pirInterrupt0();  //trigger bot sensor
-        publishState(true);
+        _state = 1; // fade on
       }
     }
     else if (msgSub == LIGHTS_OFF) {
-      //if (_state != 0) {
       if (_state == 1 || _state == 2) {
-        _state = 3; //force a fade out
-        //does a 'publish state' from 'loopPir' when finished fade out
+        _state = 3; // fade out
       }
     }
+    publishState(true);
   }
   else if (targetSub == "lights/day") {
-    if (msgSub == LIGHTS_ON) { _dayMode = true; }
-    else if (msgSub == LIGHTS_OFF) { 
-      _dayMode = false;
+    if (msgSub == LIGHTS_ON) { 
+      _dayMode = true;
       if (_state == 1 || _state == 2) {
-        _state = 3; //force a fade out
-        //fadeOff();  // _state gets set to 0 at end of fadeOff
-        //publishState(true);
-        //publishSensorTop(true);
-        //publishSensorBot(true);
+        _state = 3; // fade out - does a 'publish state' from 'loopPir' when finished fade out
       }
     }
+    else if (msgSub == LIGHTS_OFF) { 
+      // normal service is resumed
+      _dayMode = false;
+    }
+    publishState(true);
   }
   else if (targetSub == "lights/brightness/set")
   {

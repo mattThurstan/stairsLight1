@@ -57,11 +57,25 @@ void publishSensorTop(bool save) {
   publishMeshMsgSingleState("publishSensorTop", "sensors/top/status", onOff, save);
 }
 
+void publishSensorTopOn(bool save) {
+  publishMeshMsgSingleState("publishSensorTop", "sensors/top/status", true, save);
+}
+void publishSensorTopOff(bool save) {
+  publishMeshMsgSingleState("publishSensorTop", "sensors/top/status", false, save);
+}
+
 void publishSensorBot(bool save) {
   bool onOff;
   if (_state == 0 || _state == 3) { onOff = false; } 
   else { onOff = true; }
   publishMeshMsgSingleState("publishSensorBot", "sensors/bot/status", onOff, save);
+}
+
+void publishSensorBotOn(bool save) {
+  publishMeshMsgSingleState("publishSensorBot", "sensors/bot/status", true, save);
+}
+void publishSensorBotOff(bool save) {
+  publishMeshMsgSingleState("publishSensorBot", "sensors/bot/status", false, save);
 }
 
 void publishMode(bool save) {
