@@ -33,6 +33,10 @@ void publishState(bool save) {
   else { onOff = true; }
   publishMeshMsgSingleState("publishState", "lights/light/status", onOff, save);
 }
+void publishDayMode(bool save) {
+  publishMeshMsgSingleState("publishDayMode", "lights/day/status", _dayMode, save);
+}
+
 void publishBrightness(bool save) {
   publishMeshMsgSingleString("publishBrightness", "lights/brightness/status", String(_ledGlobalBrightnessCur), save);
 }
@@ -102,6 +106,7 @@ void publishStatusAll(bool save) {
   
   if (DEBUG_COMMS) { Serial.println("publishStatusAll "); }
   publishState(save);
+  publishDayMode(save);
   publishSensorTop(save);
   publishSensorBot(save);
   publishBrightness(save);

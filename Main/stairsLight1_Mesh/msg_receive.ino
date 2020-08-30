@@ -19,7 +19,7 @@ void receiveMessage(uint32_t from, String msg)
     }
     publishState(true);
   }
-  else if (targetSub == "lights/day") {
+  else if (targetSub == "lights/day/set") {
     if (msgSub == LIGHTS_ON) { 
       _dayMode = true;
       if (_state == 1 || _state == 2) {
@@ -30,7 +30,7 @@ void receiveMessage(uint32_t from, String msg)
       // normal service is resumed
       _dayMode = false;
     }
-    publishState(true);
+    publishDayMode(true);
   }
   else if (targetSub == "lights/brightness/set")
   {
