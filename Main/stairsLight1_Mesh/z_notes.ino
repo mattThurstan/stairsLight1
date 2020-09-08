@@ -27,7 +27,7 @@
  */
 
 /*
- * Home Assistant config 
+ * Home Assistant config example.
  * 
  *   light:
  *     - platform: mqtt
@@ -47,5 +47,6 @@
  *       payload_on: "ON"
  *       payload_off: "OFF"
  *       optimistic: false
+ *       
  */
  

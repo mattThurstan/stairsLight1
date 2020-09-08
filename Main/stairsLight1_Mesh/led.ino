@@ -34,9 +34,6 @@ void flashLED(byte led) {
   delay(400);
 }
 
-/*----------------------------loop led----------------------------*/
-//void loopLEDs() { }
-
 /*
  Fade all leds except for the sacrificial one in the box
  LED '0' is used for debug porpoises

@@ -165,11 +165,11 @@ void receiveMessage(uint32_t from, String msg)
   {
     // trigger only (global synced)
     // note: the single mesh msg of 'breath' is used for synced global breathing
-    if (msgSub == LIGHTS_ON) {
+    if (msgSub == ON) {
       _isBreathingSynced = true;                    // set sync to global
       _isBreathing = true;                          // start synced breathing
     }
-    else if (msgSub == LIGHTS_OFF) {
+    else if (msgSub == OFF) {
       _isBreathing = false;                         // stop breathing
       _isBreathingSynced = false;                   // set sync to local
     }
@@ -179,11 +179,11 @@ void receiveMessage(uint32_t from, String msg)
   {
     // trigger only (local)
     // note: the single mesh msg of 'breath' is used for synced global breathing
-    if (msgSub == LIGHTS_ON) {
+    if (msgSub == ON) {
       _isBreathingSynced = false;                   // set sync to local
       _isBreathing = true;                          // start local breathing
     }
-    else if (msgSub == LIGHTS_OFF) {
+    else if (msgSub == OFF) {
       _isBreathing = false;                         // stop breathing
       _isBreathingSynced = false;                   // set sync to local
     }
@@ -204,38 +204,50 @@ void receiveMessage(uint32_t from, String msg)
   }
   else if(targetSub == "debug/general/set") 
   {
-    if (msgSub == LIGHTS_ON) { DEBUG_GEN = true; Serial.println("got here"); } 
-    else if (msgSub == LIGHTS_OFF) { DEBUG_GEN = false; }
+    if (msgSub == ON) { DEBUG_GEN = true; } 
+    else if (msgSub == OFF) { DEBUG_GEN = false; }
     publishDebugGeneralState(false);
   }
   else if (targetSub == "debug/overlay/set")
   {
-    if (msgSub == LIGHTS_ON) { DEBUG_OVERLAY = true; }
-    else if (msgSub == LIGHTS_OFF) { DEBUG_OVERLAY = false; }
+    if (msgSub == ON) { DEBUG_OVERLAY = true; }
+    else if (msgSub == OFF) { DEBUG_OVERLAY = false; }
     publishDebugOverlayState(false);
   }
   else if (targetSub == "debug/meshsync/set")
   {
-    if (msgSub == LIGHTS_ON) { DEBUG_MESHSYNC = true; }
-    else if (msgSub == LIGHTS_OFF) { DEBUG_MESHSYNC = false; }
+    if (msgSub == ON) { DEBUG_MESHSYNC = true; }
+    else if (msgSub == OFF) { DEBUG_MESHSYNC = false; }
     publishDebugMeshsyncState(false);
   }
   else if(targetSub == "debug/comms/set") 
   {
-    if (msgSub == LIGHTS_ON) { DEBUG_COMMS = true; } 
-    else if (msgSub == LIGHTS_OFF) { DEBUG_COMMS = false; }
+    if (msgSub == ON) { DEBUG_COMMS = true; } 
+    else if (msgSub == OFF) { DEBUG_COMMS = false; }
     publishDebugCommsState(false);
   }
-  else if(targetSub == "debug/reset") 
+  // don't really need an ON msg but using just to sure it wasn't sent in error
+  else if(targetSub == "debug/reset") { if (msgSub == ON) { doReset(); } }
+  else if(targetSub == "debug/restart") 
   {
-    // don't really need an ON msg but using just to sure it wasn't sent in error
-    if (msgSub == LIGHTS_ON) { resetDefaults(); }
+    uint8_t restartTime = msg.toInt();
+    if (restartTime < 0 || restartTime > 255) { return; /* do nothing... */ } 
+    else { doRestart(restartTime); }
   }
-  else if(targetSub == "status/request") 
+  else if(targetSub == "reset") { if (msgSub == ON) { doReset(); } }
+  else if(targetSub == "restart") 
   {
-    if (msgSub == LIGHTS_ON) { publishStatusAll(false); } 
-    //else if (msgSub == LIGHTS_OFF) {  }
+    uint8_t restartTime = msg.toInt();
+    if (restartTime < 0 || restartTime > 255) { return; /* do nothing... */ } 
+    else { doRestart(restartTime); }
   }
+  else if(targetSub == "lockdown") 
+  {
+    uint8_t severity = msg.toInt();
+    if (severity < 0 || severity > 255) { return; /* do nothing... */ } 
+    else { doLockdown(severity); }
+  }
+  else if(targetSub == "status/request") { if (msgSub == ON) { publishStatusAll(false); }  }
   
   if (DEBUG_COMMS) { Serial.print(targetSub); Serial.print(" : "); Serial.println(msgSub); }
 }
