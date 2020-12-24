@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.501";                 // split PIR hold interval into top and bottom
+const String _progVers = "0.502";                 // fix
 
 uint8_t LOCKDOWN_SEVERITY = 0;                    // the severity of the lockdown
 bool LOCKDOWN = false;                            // are we in lockdown?
@@ -57,6 +57,8 @@ bool _isBreathingSynced = false;                  // breath sync local or global
 // NeoPixelBus - For Esp8266, the Pin is omitted and it uses GPIO3 (RX) due to DMA hardware use. 
 //2=top, 3=bottom - due to the way the LED strip is wired (top to bot) so thats the way the array goes..
 const byte _pirPin[2] = { 4, 5 }; // D2, D1       // 2 PIR sensors on interrupt pins (triggered on HIGH)
+// D2, orange, bottom
+// D1, yellow, top
 
 /*----------------------------modes----------------------------*/
 const int _modeNum = 2;                           // normal, cycle (gHue)
@@ -67,8 +69,8 @@ String _modeName[_modeNum] = { "Normal", "Cycle" };
 //const unsigned long _pirHoldInterval = 10000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
 const unsigned long _pirHoldIntervalBot = 10000;  // going down
 const unsigned long _pirHoldIntervalTop = 30000;  // going up
-unsigned long _pirHoldMillisCur;               // get current time
-unsigned long _pirHoldIntervalTemp;               // temp hold interval
+//unsigned long _pirHoldMillisCur = 0;              // get current time
+//unsigned long _pirHoldIntervalTemp = 0;           // temp hold interval
 volatile byte _state = 0;                         // 0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                     // temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
@@ -103,7 +105,7 @@ unsigned long _ledRiseSpeed = 30; //25 //35;      // speed at which the LEDs tur
 uint8_t _ledRiseSpeedSaved = 30;                  // cos of saving / casting unsigned long issues - use 0-255 via mqtt
 uint8_t _gHue2 = 0;                               // incremental cycling "base color", 0-100, converted to 0-1
 uint8_t _gHue2saved = 0;                          // used to revert color when going back to 'Normal' mode
-unsigned long _gHue2CycleMillis = 200UL;          // gHue loop update time (millis)
+unsigned long _gHue2CycleMillis = 400UL;          // gHue loop update time (millis)
 uint8_t _gHue2CycleSaved = 100;                   // 0-255 mapped to millis range
 uint8_t _gHue2CycleMultiplier = 4;                // (__gHue2CycleSaved * _gHue2CycleMultiplier) = (unsigned long) _gHue2CycleMillis
 unsigned long _gHue2PrevMillis;                   // gHue loop previous time (millis)
@@ -246,13 +248,13 @@ void loop()  {
 /*----------------------------interrupt callbacks----------------------------*/
 void pirInterrupt0() {
   if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt0"); }
-  _pirLastTriggered = 0;  //top
+  _pirLastTriggered = 0;  // D2, orange, bottom
   pirInterruptPart2();
 }
 
 void pirInterrupt1() {
   if (DEBUG_INTERRUPT) { Serial.println("pirInterrupt1"); }
-  _pirLastTriggered = 1;  //bottom
+  _pirLastTriggered = 1;  //D1, yellow, top
   pirInterruptPart2();
 }
 

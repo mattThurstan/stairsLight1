@@ -2,8 +2,8 @@
 void setupPIR() {
   if (DEBUG_GEN) { Serial.println("Setup PIR"); }
   //setup PIR pins and attach interrupts
-  pinMode(_pirPin[0], INPUT_PULLUP);
-  pinMode(_pirPin[1], INPUT_PULLUP);
+  pinMode(_pirPin[0], INPUT_PULLUP);  // D2, orange, bottom
+  pinMode(_pirPin[1], INPUT_PULLUP);  // D1, yellow, top
   attachInterrupt(digitalPinToInterrupt(_pirPin[0]), pirInterrupt0, RISING);
   attachInterrupt(digitalPinToInterrupt(_pirPin[1]), pirInterrupt1, RISING);
 }
@@ -14,12 +14,11 @@ void setupPIR() {
 void loopPir()  {
   if (_PIRtriggeredTimerRunning) {
     //pir timer - flips lights state if not in day mode
-    _pirHoldMillisCur = millis();              // get current time
+    unsigned long pirHoldMillisCur = millis();    // get current time
+    unsigned long pirHoldIntervalTemp = _pirHoldIntervalBot;
+    if (_pirLastTriggered == 1) { pirHoldIntervalTemp = _pirHoldIntervalTop; }
     
-    if (_fadeOnDirection == 0) { _pirHoldIntervalTemp = _pirHoldIntervalBot; } 
-    else if (_fadeOnDirection == 1) { _pirHoldIntervalTemp = _pirHoldIntervalTop; }
-    
-    if( (unsigned long)(_pirHoldMillisCur - _pirHoldPrevMillis) >= _pirHoldIntervalTemp ) {
+    if( (unsigned long)(pirHoldMillisCur - _pirHoldPrevMillis) >= pirHoldIntervalTemp ) {
       //when the time has expired, do this..
       if ((_state == 1 || _state == 2) && _dayMode == false) {
         _state = 3;
@@ -84,7 +83,7 @@ void fadeOn() {
 
 void fadeOff() {
   _stateSave = _state;                            // interrupt catch
-  if (_fadeOnDirection == 0) {
+  if (_pirLastTriggered == 0) {
     //fade off bottom to top 
     for (byte i = ledSegment[1].last; i >= ledSegment[1].first; i--) {
       if (_state != _stateSave) { return; }       // interrupt catch
@@ -97,7 +96,7 @@ void fadeOff() {
         return;
       }
     }
-  } else if (_fadeOnDirection == 1) {
+  } else if (_pirLastTriggered == 1) {
     //fade off top to bottom
     for (byte i = ledSegment[1].first; i <= ledSegment[1].last; i++) {
       if (_state != _stateSave) { return; }       // interrupt catch
