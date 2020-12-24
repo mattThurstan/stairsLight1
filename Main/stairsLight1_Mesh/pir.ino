@@ -14,8 +14,12 @@ void setupPIR() {
 void loopPir()  {
   if (_PIRtriggeredTimerRunning) {
     //pir timer - flips lights state if not in day mode
-    unsigned long pirHoldCurMillis = millis();    // get current time
-    if( (unsigned long)(pirHoldCurMillis - _pirHoldPrevMillis) >= _pirHoldInterval ) {
+    _pirHoldMillisCur = millis();              // get current time
+    
+    if (_fadeOnDirection == 0) { _pirHoldIntervalTemp = _pirHoldIntervalBot; } 
+    else if (_fadeOnDirection == 1) { _pirHoldIntervalTemp = _pirHoldIntervalTop; }
+    
+    if( (unsigned long)(_pirHoldMillisCur - _pirHoldPrevMillis) >= _pirHoldIntervalTemp ) {
       //when the time has expired, do this..
       if ((_state == 1 || _state == 2) && _dayMode == false) {
         _state = 3;
@@ -23,7 +27,7 @@ void loopPir()  {
       }
       publishSensorTopOff(true);
       publishSensorBotOff(true);
-      _PIRtriggeredTimerRunning = false;                      // disable itself
+      _PIRtriggeredTimerRunning = false;          // disable itself
     }
   }
   
@@ -80,7 +84,7 @@ void fadeOn() {
 
 void fadeOff() {
   _stateSave = _state;                            // interrupt catch
-  if (_pirLastTriggered == 0) {
+  if (_fadeOnDirection == 0) {
     //fade off bottom to top 
     for (byte i = ledSegment[1].last; i >= ledSegment[1].first; i--) {
       if (_state != _stateSave) { return; }       // interrupt catch
@@ -93,7 +97,7 @@ void fadeOff() {
         return;
       }
     }
-  } else if (_pirLastTriggered == 1) {
+  } else if (_fadeOnDirection == 1) {
     //fade off top to bottom
     for (byte i = ledSegment[1].first; i <= ledSegment[1].last; i++) {
       if (_state != _stateSave) { return; }       // interrupt catch

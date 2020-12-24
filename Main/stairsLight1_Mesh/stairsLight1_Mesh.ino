@@ -19,7 +19,7 @@
     
     https://github.com/mattThurstan/
     
-    WeMos D1 (R2 &) mini ESP8266, 80 MHz, 115200 baud, 4M, (1M SPIFFS)
+    WeMos D1 (R2 & mini) ESP8266, 80 MHz, 115200 baud, 4M, (1M SPIFFS)
 */
 
 
@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.5";                   // emergency protocols
+const String _progVers = "0.501";                 // split PIR hold interval into top and bottom
 
 uint8_t LOCKDOWN_SEVERITY = 0;                    // the severity of the lockdown
 bool LOCKDOWN = false;                            // are we in lockdown?
@@ -64,7 +64,11 @@ volatile int _modeCur = 1;                        // current mode in use
 String _modeName[_modeNum] = { "Normal", "Cycle" };
 
 /*----------------------------PIR----------------------------*/
-const unsigned long _pirHoldInterval = 10000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+//const unsigned long _pirHoldInterval = 10000; //150000; // 15000=15 sec. 30000=30 sec. 150000=2.5 mins.
+const unsigned long _pirHoldIntervalBot = 10000;  // going down
+const unsigned long _pirHoldIntervalTop = 30000;  // going up
+unsigned long _pirHoldMillisCur;               // get current time
+unsigned long _pirHoldIntervalTemp;               // temp hold interval
 volatile byte _state = 0;                         // 0-Off, 1-Fade On, 2-On, 3-Fade Off
 volatile byte _stateSave = 0;                     // temp save state for inside for-loops
 //direction for fade on/off is determined by last pir triggered
@@ -255,17 +259,12 @@ void pirInterrupt1() {
 void pirInterruptPart2() {
   if (_state == 0 || _state == 3) {
     if (_dayMode == false) {
-      _state = 1;                                   // if off or fading down, then fade back up again
+      _state = 1;                                 // if off or fading down, then fade back up again
     }
     _fadeOnDirection = _pirLastTriggered;
   }
-  if (_pirLastTriggered == 0) {
-    //publishSensorBot(true);
-    publishSensorBotOn(true);
-  } else if (_pirLastTriggered == 1) {
-    //publishSensorTop(true);
-    publishSensorTopOn(true);
-  }
+  if (_pirLastTriggered == 0) { publishSensorBotOn(true); } 
+  else if (_pirLastTriggered == 1) { publishSensorTopOn(true); }
   _pirHoldPrevMillis = millis();                  // store the current time (reset the timer)
-  _PIRtriggeredTimerRunning = true;                           // enable the timer loop in pir
+  _PIRtriggeredTimerRunning = true;               // enable the timer loop in pir
 }
