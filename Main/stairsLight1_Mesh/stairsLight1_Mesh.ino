@@ -1,6 +1,6 @@
 /*
     'stairsLight1_Mesh' by Thurstan. LEDs controlled by motion sensors.
-    Copyright (C) 2020 MTS Standish (Thurstan|mattKsp)
+    Copyright (C) 2021 MTS Standish (Thurstan|mattKsp)
     
     https://github.com/mattThurstan/
     
@@ -31,7 +31,7 @@
 
 /*----------------------------system----------------------------*/
 const String _progName = "stairsLight1_Mesh";
-const String _progVers = "0.502";                 // fix
+const String _progVers = "0.503";                 // Tidy up
 
 uint8_t LOCKDOWN_SEVERITY = 0;                    // the severity of the lockdown
 bool LOCKDOWN = false;                            // are we in lockdown?
@@ -128,6 +128,7 @@ HslColor _colorHSL(0.25f, 0.5f, 0.5f);
 /*----------------------------Mesh----------------------------*/
 painlessMesh  mesh;                               // initialise
 uint32_t id_bridge1 = DEVICE_ID_BRIDGE1;
+uint8_t _stationChannel = STATION_CHANNEL;
 
 void receivedCallback(uint32_t from, String &msg ) {
   if (DEBUG_COMMS) { Serial.printf("stairsLight1_Mesh: Received from %u msg=%s\n", from, msg.c_str()); }
@@ -207,6 +208,7 @@ void setup() {
   strip.ClearTo(_rgbBlack);
   strip.SetPixelColor(0, _rgbGreen);
   strip.Show();
+  
   delay(1500);
   strip.ClearTo(_rgbBlack);
 }
@@ -224,21 +226,8 @@ void loop()  {
   loopPir();
   loopBreathing();                                // overlaid on top, cos stairs lights are important
   gHueRotate();
-  
-  if (DEBUG_OVERLAY) {
-    showSegmentEndpoints();
-  } else {
-    strip.SetPixelColor(0, _rgbBlack);            // modes are responsible for all other leds
-  }
-  if (DEBUG_MESHSYNC) { }
- 
-  EVERY_N_SECONDS(60) {                           // too much ???
-    if (_shouldSaveSettings == true)
-    { 
-      saveSettings(); 
-      _shouldSaveSettings = false; 
-    }
-  }
+  loopDebug();
+  loopSaveSettings();
   //factoryReset();              //TODO           // Press and hold the button to reset to factory defaults
 
   strip.Show();

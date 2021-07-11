@@ -1,18 +1,5 @@
 /*----------------------------utils----------------------------*/
 
-void factoryReset() { /* TODO */ }
-
-void publishDeviceOffline() {
-  publishMeshMsgSingleState("publishState", "status", OFF, false);
-  publishMeshMsgSingleState("publishState", "available", "offline", false);
-}
-
-void deviceRestart() {
-  ESP.restart();
-}
-
-void deviceShutdown() { /* ??? */ }
-
 void turnOffWifi() {
   if (DEBUG_GEN) { Serial.println("Disconnecting..."); }
   WiFi.disconnect();
@@ -28,18 +15,24 @@ void turnOffSerial() {
   //
 }
 
+void factoryReset() { /* TODO */ }
+
+void deviceRestart() { ESP.restart(); }
+
+void deviceShutdown() { /* ??? */ }
 
 /*----------------------------main calls-----------------------*/
 /* Reset everything to default. */
 void doReset() {
-  //resetDefaults();
-  //deviceRestart(); // ..and restart
+  resetDefaults();
+  deviceRestart();
 }
 
 /* Restart the device (with a delay) */
 void doRestart(uint8_t restartTime) {
-  // delay for restartTime
-  deviceRestart(); // ..and restart
+  uint16_t dly = (restartTime * 60 * 1000); // static ???
+  delay(dly);
+  deviceRestart();
 }
 
 /*
@@ -79,6 +72,17 @@ void doLockdown(uint8_t severity) {
   else { }
 }
 
+/*
+ * Debug utils
+ */
+void loopDebug() {
+  if (DEBUG_OVERLAY) {
+    showSegmentEndpoints();
+  } else {
+    strip.SetPixelColor(0, _rgbBlack);            // modes are responsible for all other leds
+  }
+  if (DEBUG_MESHSYNC) { }
+}
 
 /*    
   if (false == digitalRead(pinButton))

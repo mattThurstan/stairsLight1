@@ -428,4 +428,3 @@ void publishState()
   mqttClient.publish(stat_power_topic, state, true);
 }
 */
-

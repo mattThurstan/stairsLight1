@@ -114,6 +114,7 @@ void publishStatusAll(bool save) {
   publishMode(save);
   publishRiseSpeed(save);
   publishGHue2Cycle(save);
+  
   publishDebugGeneralState(save);
   publishDebugOverlayState(save);
   publishDebugMeshsyncState(save);

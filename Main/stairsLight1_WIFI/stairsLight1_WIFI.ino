@@ -141,7 +141,7 @@ void setup()
   }
   
   loadConfigAndSettings();
-    flashLED(1);
+    //flashLED(1);  // can't flash LED before LED's setup.......
   setupLED();
     flashLED(2);
   setupPIR();
@@ -206,4 +206,3 @@ void pirInterruptPart2() {
   _pirHoldPrevMillis = millis();                  //store the current time (reset the timer)
   _timerRunning = true;                           //enable the timer loop in pir
 }
-

@@ -43,6 +43,7 @@ void loadSettings()
         _colorHSL.H = jsonDoc["colorHSL_H"];
         _colorHSL.S = jsonDoc["colorHSL_S"];
         _colorHSL.L = jsonDoc["colorHSL_L"];
+        _stationChannel = jsonDoc["stationChannel"];
       }
       
       configFile.close();
@@ -78,6 +79,7 @@ void saveSettings()
   json["colorHSL_H"] = _colorHSL.H;
   json["colorHSL_S"] = _colorHSL.S;
   json["colorHSL_L"] = _colorHSL.L;
+  json["stationChannel"] = _stationChannel;
 
   if (DEBUG_GEN) { 
     serializeJson(jsonDoc, Serial);       // output to serial
@@ -87,7 +89,20 @@ void saveSettings()
   settingsFile.close();
 }
 
+void clearSettings() { }
+
+void loopSaveSettings() {
+  EVERY_N_SECONDS(60) {                           // too much ???
+    if (_shouldSaveSettings == true)
+    { 
+      saveSettings(); 
+      _shouldSaveSettings = false; 
+    }
+  }
+}
+
 void resetDefaults() {
+  clearSettings();
   setDefaults();
   saveSettings();
 }
@@ -116,4 +131,6 @@ void setDefaults()
   _colorHSL.H = 0.25f;
   _colorHSL.S = 0.5f;
   _colorHSL.L = 0.5f;
+  
+  _stationChannel = STATION_CHANNEL;
 }

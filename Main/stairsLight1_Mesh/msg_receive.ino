@@ -5,30 +5,22 @@ void receiveMessage(uint32_t from, String msg)
   String targetSub = msg.substring(0, firstMsgIndex);
   String msgSub = msg.substring(firstMsgIndex+1);
 
-  if (targetSub == "lights/light/switch")
-  {
+  if (targetSub == "lights/light/switch") {
     if (msgSub == LIGHTS_ON) {
-      if (_state == 0 || _state == 3) {
-        _state = 1; // fade on
-      }
+      if (_state == 0 || _state == 3) { _state = 1; } // fade on
     }
     else if (msgSub == LIGHTS_OFF) {
-      if (_state == 1 || _state == 2) {
-        _state = 3; // fade out
-      }
+      if (_state == 1 || _state == 2) { _state = 3; } // fade out
     }
     publishState(true);
   }
   else if (targetSub == "lights/day/set") {
     if (msgSub == LIGHTS_ON) { 
       _dayMode = true;
-      if (_state == 1 || _state == 2) {
-        _state = 3; // fade out - does a 'publish state' from 'loopPir' when finished fade out
-      }
+      if (_state == 1 || _state == 2) { _state = 3; } // fade out - does a 'publish state' from 'loopPir' when finished fade out
     }
     else if (msgSub == LIGHTS_OFF) { 
-      // normal service is resumed
-      _dayMode = false;
+      _dayMode = false; // normal service is resumed
     }
     publishDayMode(true);
   }
@@ -246,6 +238,11 @@ void receiveMessage(uint32_t from, String msg)
     uint8_t severity = msg.toInt();
     if (severity < 0 || severity > 255) { return; /* do nothing... */ } 
     else { doLockdown(severity); }
+  }
+  else if(targetSub == "channel")
+  {
+    uint8_t channel = msg.toInt();
+    changeChannel(channel);
   }
   else if(targetSub == "status/request") { if (msgSub == ON) { publishStatusAll(false); }  }
   
